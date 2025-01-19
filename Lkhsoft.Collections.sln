@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lkhsoft.Collections", "Lkhsoft.Collections\Lkhsoft.Collections.csproj", "{13937BF5-DA14-4E6D-96CD-991AD7D78FD5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lkhsoft.Collections.Test", "Lkhsoft.Collections.Test\Lkhsoft.Collections.Test.csproj", "{03C00024-24BF-4668-BF8C-695851F6B1D8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{13937BF5-DA14-4E6D-96CD-991AD7D78FD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13937BF5-DA14-4E6D-96CD-991AD7D78FD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13937BF5-DA14-4E6D-96CD-991AD7D78FD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13937BF5-DA14-4E6D-96CD-991AD7D78FD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{03C00024-24BF-4668-BF8C-695851F6B1D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03C00024-24BF-4668-BF8C-695851F6B1D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03C00024-24BF-4668-BF8C-695851F6B1D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03C00024-24BF-4668-BF8C-695851F6B1D8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
