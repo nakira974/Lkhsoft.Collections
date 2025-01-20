@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Globalization;
+using System.Runtime.Serialization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Xml;
@@ -12,26 +13,20 @@ using System.Collections.Generic;
 using System.Linq;
 
 /// <summary>
-/// Red-black tree implementation with serialization support for XML and JSON
+/// Red-black tree implementation
 /// </summary>
-/// <typeparam name="T"></typeparam>
 [JsonConverter(typeof(RedBlackTreeJsonConverterFactory))]
-public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerable<T> where T : class, IComparable<T>, IEquatable<T>, IXmlSerializable
+public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerable<T> where T : class, IComparable<T>
 {
     /// <summary>
     ///  Root node of the tree
     /// </summary>
-    private Node? root;
-    
-    /// <summary>
-    ///  Comparer function for the tree
-    /// </summary>
-    private Func<T, int> comparer;
+    private Node? _root;
     
     /// <summary>
     ///  Count of the tree
     /// </summary>
-    private int count;
+    private int _count;
     
     /// <summary>
     ///  Node class for Red-Black Tree
@@ -46,7 +41,7 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
         /// <summary>
         /// Color of the node
         /// </summary>
-        public bool IsRed { get; set; }
+        public NodeColor Color { get; set; }
         
         /// <summary>
         /// Node's children and parent
@@ -67,19 +62,35 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
         ///  Node base constructor
         /// </summary>
         /// <param name="value">Node's value</param>
-        /// <param name="isRed">Is node red ?</param>
-        public Node(T value, bool isRed = true)
+        /// <param name="nodeColor">Node color</param>
+        public Node(T value, NodeColor nodeColor = NodeColor.Red)
         {
             Value = value;
-            IsRed = isRed;
+            Color = nodeColor;
         }
+    }
+    
+    /// <summary>
+    /// Node color for the red-black tree
+    /// </summary>
+    private enum NodeColor
+    {
+        /// <summary>
+        /// Red color
+        /// </summary>
+        Red = 0xF00,
+        
+        /// <summary>
+        /// Black color
+        /// </summary>
+        Black = 0xFFF
     }
     
     
     /// <summary>
     ///  Count of the collection
     /// </summary>
-    public int Count => count;
+    public int Count => _count;
 
     /// <summary>
     /// Is the collection read only ?
@@ -89,19 +100,7 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
     /// <summary>
     /// Default constructor
     /// </summary>
-    public RedBlackTree() : this(null)
-    {
-        
-    }
-
-    /// <summary>
-    /// Default constructor with comparer
-    /// </summary>
-    /// <param name="comparer">Comparer function</param>
-    public RedBlackTree(Func<T, int>? comparer)
-    {
-        this.comparer = comparer ?? (x => x.CompareTo(default(T)));
-    }
+    public RedBlackTree() { }
     
     /// <summary>
     /// Add an item to the tree
@@ -109,15 +108,15 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
     /// <param name="item">Item to be added</param>
     public void Add(T item)
     {
-        if (root is null)
+        if (_root is null)
         {
-            root = new Node(item) { IsRed = false };
+            _root = new Node(item) { Color = NodeColor.Black };
         }
         else
         {
-            Add(root, item);
+            Add(_root, item);
         }
-        count++;
+        _count++;
     }
 
     /// <summary>
@@ -127,7 +126,8 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
     /// <param name="item">Item to be added</param>
     private void Add(Node? node, T item)
     {
-        var comparison = comparer(item);
+        if (node is null) return;
+        var comparison = node.Value.CompareTo(item);
         if (comparison < 0)
         {
             if (node?.Left is null)
@@ -180,16 +180,16 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
     /// <param name="node">Node from where to start fixing the tree</param>
     private void FixTree(Node? node)
     {
-        while (node?.Parent is not null && node != root && node.Parent.IsRed)
+        while (node?.Parent is not null && node != _root && node.Parent.Color.Equals(NodeColor.Red))
         {
             if (node.Parent == node.Parent.Parent?.Left)
             {
                 var uncle = node.Parent.Parent.Right;
-                if (uncle is not null && uncle.IsRed)
+                if (uncle is not null && uncle.Color.Equals(NodeColor.Red))
                 {
-                    node.Parent.IsRed = false;
-                    uncle.IsRed = false;
-                    node.Parent.Parent.IsRed = true;
+                    node.Parent.Color = NodeColor.Black;
+                    uncle.Color = NodeColor.Black;
+                    node.Parent.Parent.Color = NodeColor.Red;
                     node = node.Parent.Parent;
                 }
                 else
@@ -202,10 +202,10 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
 
                     if (node.Parent is not null)
                     {
-                        node.Parent.IsRed = false;
+                        node.Parent.Color = NodeColor.Black;
                         if (node.Parent.Parent is not null)
                         {
-                            node.Parent.Parent.IsRed = true;
+                            node.Parent.Parent.Color = NodeColor.Red;
                             RotateRight(node.Parent.Parent);
                         }
                         else
@@ -222,13 +222,13 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
             else
             {
                 var uncle = node.Parent.Parent?.Left;
-                if (uncle is not null && uncle.IsRed)
+                if (uncle is not null && uncle.Color.Equals(NodeColor.Red))
                 {
-                    node.Parent.IsRed = false;
-                    uncle.IsRed = false;
+                    node.Parent.Color = NodeColor.Black;
+                    uncle.Color = NodeColor.Black;
                     if (node.Parent.Parent is not null)
                     {
-                        node.Parent.Parent.IsRed = true;
+                        node.Parent.Parent.Color = NodeColor.Red;
                         node = node.Parent.Parent;
                     }
                     else
@@ -246,10 +246,10 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
 
                     if (node.Parent is not null)
                     {
-                        node.Parent.IsRed = false;
+                        node.Parent.Color = NodeColor.Black;
                         if (node.Parent.Parent is not null)
                         {
-                            node.Parent.Parent.IsRed = true;
+                            node.Parent.Parent.Color = NodeColor.Red;
                             RotateLeft(node.Parent.Parent);
                         }
                         else
@@ -265,40 +265,37 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
             }
         }
 
-        if (root is not null) root.IsRed = false;
+        if (_root is not null) _root.Color = NodeColor.Black;
         else throw new InvalidOperationException("Root is null");
     }
 
-    /// <summary>
-    /// Rotate the tree to the left
-    /// </summary>
-    /// <param name="node">Node from where to start the rotation</param>
-    private void RotateLeft(Node? node)
-    {
-        var temp = node?.Right;
-        if (node is not null)
+        /// <summary>
+        /// Rotate the tree to the left
+        /// </summary>
+        /// <param name="node">Node from where to start the rotation</param>
+        private void RotateLeft(Node? node)
         {
-            node.Right = temp?.Left;
-            if (temp?.Left is not null)
+            var temp = node?.Right;
+            if (node is not null && temp is not null)
             {
-                temp.Left.Parent = node;
-            }
-
-            if (temp is not null)
-            {
-                temp.Parent = node.Parent;
-                if (node.Parent is not null)
+                node.Right = temp.Left;
+                if (temp.Left is not null)
                 {
-                    root = temp;
+                    temp.Left.Parent = node;
                 }
-                else if (node == node.Parent?.Left)
+
+                temp.Parent = node.Parent;
+                if (node.Parent is null)
+                {
+                    _root = temp;
+                }
+                else if (node == node.Parent.Left)
                 {
                     node.Parent.Left = temp;
                 }
                 else
                 {
-                    if (node.Parent is not null) node.Parent.Right = temp;
-                    else throw new InvalidOperationException("Parent is null");
+                    node.Parent.Right = temp;
                 }
 
                 temp.Left = node;
@@ -306,32 +303,29 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
             }
             else
             {
-                throw new InvalidOperationException("Temp is null");
+                throw new InvalidOperationException("Node or temp is null");
             }
-        }else throw new InvalidOperationException("Node is null");
-    }
+        }
 
-    /// <summary>
-    /// Rotate the tree to the right
-    /// </summary>
-    /// <param name="node">Node from where to start the rotation</param>
-    private void RotateRight(Node? node)
-    {
-        var temp = node?.Left;
-        if (node is not null)
+        /// <summary>
+        /// Rotate the tree to the right
+        /// </summary>
+        /// <param name="node">Node from where to start the rotation</param>
+        private void RotateRight(Node? node)
         {
-            node.Left = temp?.Right;
-            if (temp?.Right is not null)
+            var temp = node?.Left;
+            if (node is not null && temp is not null)
             {
-                temp.Right.Parent = node;
-            }
+                node.Left = temp.Right;
+                if (temp.Right is not null)
+                {
+                    temp.Right.Parent = node;
+                }
 
-            if (temp is not null)
-            {
                 temp.Parent = node.Parent;
                 if (node.Parent is null)
                 {
-                    root = temp;
+                    _root = temp;
                 }
                 else if (node == node.Parent.Right)
                 {
@@ -347,14 +341,9 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
             }
             else
             {
-                throw new InvalidOperationException("Temp is null");
+                throw new InvalidOperationException("Node or temp is null");
             }
         }
-        else
-        {
-            throw new InvalidOperationException("Node is null");
-        }
-    }
 
     /// <summary>
     /// Removes an item from the tree
@@ -383,7 +372,7 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
             child.Parent = node.Parent;
             if (node.Parent is null)
             {
-                root = child;
+                _root = child;
             }
             else if (node == node.Parent.Left)
             {
@@ -396,7 +385,7 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
         }
         else if (node.Parent is null)
         {
-            root = null;
+            _root = null;
         }
         else
         {
@@ -411,7 +400,7 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
             FixTree(node);
         }
 
-        count--;
+        _count--;
         return true;
     }
 
@@ -422,21 +411,20 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
     /// <returns>The node containing the item</returns>
     private Node? FindNode(T item)
     {
-        var current = root;
+        var current = _root;
         while (current is not null)
         {
-            int comparison = comparer(item);
-            if (comparison < 0)
+            var comparison = current.Value.CompareTo(item);
+            switch (comparison)
             {
-                current = current.Left;
-            }
-            else if (comparison > 0)
-            {
-                current = current.Right;
-            }
-            else
-            {
-                return current;
+                case < 0:
+                    current = current.Left;
+                    break;
+                case > 0:
+                    current = current.Right;
+                    break;
+                default:
+                    return current;
             }
         }
         return null;
@@ -459,8 +447,8 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
     /// <inheritdoc/>
     public void Clear()
     {
-        root = null;
-        count = 0;
+        _root = null;
+        _count = 0;
     }
 
     /// <inheritdoc/>
@@ -485,7 +473,7 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
             throw new ArgumentException("Array is too small");
         }
 
-        foreach (T item in this)
+        foreach (var item in this)
         {
             array[arrayIndex++] = item;
         }
@@ -494,7 +482,7 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
     /// <inheritdoc/>
     public IEnumerator<T> GetEnumerator()
     {
-        return InOrderTraversal(root).GetEnumerator();
+        return InOrderTraversal(_root).GetEnumerator();
     }
 
     /// <inheritdoc/>
@@ -510,17 +498,15 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
     /// <returns>The current values of traversed nodes</returns>
     private IEnumerable<T> InOrderTraversal(Node? node)
     {
-        if (node is not null)
+        if (node is null) yield break;
+        foreach (var item in InOrderTraversal(node.Left))
         {
-            foreach (T item in InOrderTraversal(node.Left))
-            {
-                yield return item;
-            }
-            yield return node.Value;
-            foreach (T item in InOrderTraversal(node.Right))
-            {
-                yield return item;
-            }
+            yield return item;
+        }
+        yield return node.Value;
+        foreach (var item in InOrderTraversal(node.Right))
+        {
+            yield return item;
         }
     }
 
@@ -530,7 +516,7 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
     /// <returns>The current tree as an array</returns>
     public T[] ToArray()
     {
-        T[] array = new T[Count];
+        var array = new T[Count];
         CopyTo(array, 0);
         return array;
     }
@@ -541,7 +527,7 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
     /// <returns>The current tree as a list</returns>
     public List<T> ToList()
     {
-        return new List<T>(this);
+        return [..this];
     }
     
     /// <summary>
@@ -551,7 +537,7 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
     /// <param name="context">Serialization context</param>
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-        info.AddValue("Count", count);
+        info.AddValue("Count", _count);
         info.AddValue("Items", this.ToArray());
     }
 
@@ -562,12 +548,12 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
     public void ReadXml(XmlReader reader)
     {
         reader.ReadStartElement();
-        count = int.Parse(reader.GetAttribute("Count") ?? throw new InvalidOperationException("Count is null"));
-        T[] items = new T[count];
-        for (int i = 0; i < count; i++)
+        _count = int.Parse(reader.GetAttribute("Count") ?? throw new InvalidOperationException("Count is null"));
+        var items = new T[_count];
+        for (var i = 0; i < _count; i++)
         {
             reader.ReadStartElement("Item");
-            XmlSerializer itemSerializer = new XmlSerializer(typeof(T));
+            var itemSerializer = new XmlSerializer(typeof(T));
             items[i] = (T)itemSerializer.Deserialize(reader)! ?? throw new InvalidOperationException("Item is null");
             reader.ReadEndElement();
         }
@@ -585,11 +571,11 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
     /// <param name="writer">XmlWriter to write in</param>
     public void WriteXml(XmlWriter writer)
     {
-        writer.WriteAttributeString("Count", count.ToString());
-        foreach (T item in this)
+        writer.WriteAttributeString("Count", _count.ToString());
+        foreach (var item in this)
         {
             writer.WriteStartElement("Item");
-            XmlSerializer itemSerializer = new XmlSerializer(typeof(T));
+            var itemSerializer = new XmlSerializer(typeof(T));
             itemSerializer.Serialize(writer, item);
             writer.WriteEndElement();
         }
@@ -611,7 +597,7 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
     /// <returns>An async enumerator</returns>
     public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default)
     {
-        return new RedBlackTreeAsyncEnumerator(root, cancellationToken);
+        return new RedBlackTreeAsyncEnumerator(_root, cancellationToken);
     }
 
     /// <summary>
@@ -632,7 +618,7 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
         /// <summary>
         /// Stack for the enumerator
         /// </summary>
-        private Stack<Node?> _stack;
+        private readonly Stack<Node?> _stack;
         
         /// <summary>
         /// Current node of the enumerator
@@ -659,7 +645,7 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
         }
 
         /// <inheritdoc/>
-        public async ValueTask<bool> MoveNextAsync()
+        public ValueTask<bool> MoveNextAsync()
         {
             if (_currentNode is null)
             {
@@ -688,10 +674,10 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
                     throw new InvalidOperationException("Right node is null");
                 }
 
-                return true;
+                return ValueTask.FromResult(true);
             }
 
-            return false;
+            return ValueTask.FromResult(false);
         }
 
         /// <inheritdoc/>
@@ -703,12 +689,14 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
 /// Red-black tree JSON converter
 /// </summary>
 /// <typeparam name="T">Stored type inside the tree</typeparam>
-public class RedBlackTreeJsonConverter<T> : JsonConverter<RedBlackTree<T>> where T : class, IComparable<T>, IEquatable<T>, IXmlSerializable
+public class RedBlackTreeJsonConverter<T> : JsonConverter<RedBlackTree<T>> where T : class, IComparable<T>
 {
     /// <inheritdoc/>
     public override RedBlackTree<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var tree = new RedBlackTree<T>();
+        var count = 0;
+        
         if (reader.TokenType != JsonTokenType.StartArray)
         {
             throw new JsonException();
@@ -716,30 +704,88 @@ public class RedBlackTreeJsonConverter<T> : JsonConverter<RedBlackTree<T>> where
 
         while (reader.Read())
         {
-            if (reader.TokenType == JsonTokenType.EndArray)
+            switch (reader.TokenType)
             {
-                return tree;
-            }
+                case JsonTokenType.EndObject:
+                    if(count > tree.Count) throw new JsonException("JSON count is different from the actual count");
+                    return tree;
+                case JsonTokenType.PropertyName:
+                    var propertyName = reader.GetString();
 
-            if (reader.TokenType == JsonTokenType.StartObject)
-            {
-                var item = JsonSerializer.Deserialize<T>(ref reader, options);
-                tree.Add(item ?? throw new InvalidOperationException("Item is null"));
+                    switch (propertyName)
+                    {
+                        // Si la propriété est "Count", on peut l'ignorer.
+                        case "Count":
+                            count = JsonSerializer.Deserialize<int>(ref reader, options);
+                            break;
+                        // Si la propriété est "Items", on la traite comme une liste d'objets
+                        case "Items":
+                        {
+                            if (reader.TokenType == JsonTokenType.PropertyName)
+                            {
+                                while (reader.Read())
+                                {
+                                    if (reader.TokenType == JsonTokenType.EndArray)
+                                    {
+                                        break;
+                                    }
+
+                                    if (reader.TokenType != JsonTokenType.StartObject) continue;
+                                    T value = null!;
+
+                                    while (reader.Read())
+                                    {
+                                        if (reader.TokenType == JsonTokenType.EndObject)
+                                        {
+                                            break;
+                                        }
+
+                                        if (reader.TokenType != JsonTokenType.PropertyName) continue;
+                                        var innerPropertyName = reader.GetString();
+                                        reader.Read(); // Passer à la valeur
+
+                                        switch (innerPropertyName)
+                                        {
+                                            case "Value":
+                                                value = JsonSerializer.Deserialize<T>(ref reader, options) ?? throw new InvalidOperationException("Value is null");
+                                                break;
+                                        }
+                                    }
+
+                                    tree.Add(value);
+                                }
+                            }
+
+                            break;
+                        }
+                    }
+                    break;
             }
         }
 
-        throw new JsonException();
+
+        throw new JsonException("Unexpected end of JSON");
     }
 
     /// <inheritdoc/>
     public override void Write(Utf8JsonWriter writer, RedBlackTree<T> value, JsonSerializerOptions options)
     {
-        writer.WriteStartArray();
+        
+        writer.WriteStartObject();
+
+        writer.WriteNumber("Count", value.Count);
+
+        writer.WriteStartArray("Items");
         foreach (var item in value)
         {
+            writer.WriteStartObject();
+            writer.WritePropertyName("Value");
             JsonSerializer.Serialize(writer, item, options);
+            writer.WriteEndObject();
         }
         writer.WriteEndArray();
+
+        writer.WriteEndObject();
     }
 }
 
@@ -757,9 +803,7 @@ public class RedBlackTreeJsonConverterFactory : JsonConverterFactory
         }
 
         var itemType = typeToConvert.GetGenericArguments()[0];
-        return typeof(IComparable<>).MakeGenericType(itemType).IsAssignableFrom(itemType) &&
-               typeof(IEquatable<>).MakeGenericType(itemType).IsAssignableFrom(itemType) &&
-               typeof(IXmlSerializable).IsAssignableFrom(itemType);
+        return typeof(IComparable<>).MakeGenericType(itemType).IsAssignableFrom(itemType);
     }
 
     /// <inheritdoc/>
@@ -770,3 +814,798 @@ public class RedBlackTreeJsonConverterFactory : JsonConverterFactory
         return (JsonConverter)Activator.CreateInstance(converterType)! ?? throw new InvalidOperationException("Converter is null");
     }
 }
+
+    /// <summary>
+    /// Red-black tree map implementation
+    /// </summary>
+    [JsonConverter(typeof(RedBlackTreeMapJsonConverterFactory))]
+    public class RedBlackTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable, IAsyncEnumerable<KeyValuePair<TKey, TValue>>
+        where TKey : class, IComparable<TKey>
+    {
+        /// <summary>
+        /// Root node of the tree
+        /// </summary>
+        private Node? _root;
+        
+        /// <summary>
+        /// Count of the tree
+        /// </summary>
+        private int _count;
+
+        /// <summary>
+        /// Node class for Red-Black Tree
+        /// </summary>
+        private class Node(TKey key, TValue value, NodeColor nodeColor = NodeColor.Red)
+        {
+            /// <summary>
+            /// Key of the node
+            /// </summary>
+            public TKey Key { get; set; } = key;
+            
+            /// <summary>
+            /// Value of the node
+            /// </summary>
+            public TValue Value { get; set; } = value;
+            
+            /// <summary>
+            /// Color of the node
+            /// </summary>
+            public NodeColor Color { get; set; } = nodeColor;
+            
+            /// <summary>
+            /// Node's children and parent
+            /// </summary>
+            public Node? Left { get; set; }
+            
+            /// <summary>
+            /// Node's children and parent
+            /// </summary>
+            public Node? Right { get; set; }
+            
+            /// <summary>
+            /// Node's children and parent
+            /// </summary>
+            public Node? Parent { get; set; }
+        }
+
+        /// <summary>
+        /// Node color for the red-black tree
+        /// </summary>
+        private enum NodeColor
+        {
+            Red = 0xF00,
+            Black = 0xFFF
+        }
+
+        /// <inheritdoc/>
+        public bool Remove(KeyValuePair<TKey, TValue> item)
+        {
+            return Remove(item.Key);
+        }
+
+        /// <summary>
+        /// Root node of the tree
+        /// </summary>
+        public int Count => _count;
+        
+        /// <summary>
+        /// Is the collection read only ?
+        /// </summary>
+        public bool IsReadOnly => false;
+
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        public RedBlackTree() { }
+        
+        /// <summary>
+        /// Get or set the value of the tree
+        /// </summary>
+        public TValue this[TKey key]
+        {
+            get
+            {
+                var node = FindNode(key);
+                if (node is null)
+                {
+                    throw new KeyNotFoundException();
+                }
+                return node.Value;
+            }
+            set
+            {
+                var node = FindNode(key);
+                if (node is null)
+                {
+                    Add(key, value);
+                }
+                else
+                {
+                    node.Value = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Keys of the tree
+        /// </summary>
+        public ICollection<TKey> Keys => this.Select(kvp => kvp.Key).ToList();
+        
+        /// <summary>
+        /// Values of the tree
+        /// </summary>
+        public ICollection<TValue> Values => this.Select(kvp => kvp.Value).ToList();
+
+        /// <inheritdoc/>
+        public void Add(TKey key, TValue value)
+        {
+            if (_root is null)
+            {
+                _root = new Node(key, value) { Color = NodeColor.Black };
+            }
+            else
+            {
+                Add(_root, key, value);
+            }
+            _count++;
+        }
+
+        /// <summary>
+        /// Internal add function helper
+        /// </summary>
+        private void Add(Node? node, TKey key, TValue value)
+        {
+            if (node is null) return;
+            var comparison = node.Key.CompareTo(key);
+            if (comparison < 0)
+            {
+                if (node?.Left is null)
+                {
+                    if (node is not null)
+                    {
+                        node.Left = new Node(key, value)
+                        {
+                            Parent = node
+                        };
+                        FixTree(node.Left);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Node is null");
+                    }
+                }
+                else
+                {
+                    Add(node.Left, key, value);
+                }
+            }
+            else
+            {
+                if (node?.Right is null)
+                {
+                    if (node is not null)
+                    {
+                        node.Right = new Node(key, value)
+                        {
+                            Parent = node
+                        };
+                        FixTree(node.Right);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Node is null");
+                    }
+                }
+                else
+                {
+                    Add(node.Right, key, value);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Fix the tree after adding a node
+        /// </summary>
+        private void FixTree(Node? node)
+        {
+            while (node?.Parent is not null && node != _root && node.Parent.Color.Equals(NodeColor.Red))
+            {
+                if (node.Parent == node.Parent.Parent?.Left)
+                {
+                    var uncle = node.Parent.Parent.Right;
+                    if (uncle is not null && uncle.Color.Equals(NodeColor.Red))
+                    {
+                        node.Parent.Color = NodeColor.Black;
+                        uncle.Color = NodeColor.Black;
+                        node.Parent.Parent.Color = NodeColor.Red;
+                        node = node.Parent.Parent;
+                    }
+                    else
+                    {
+                        if (node == node.Parent.Right)
+                        {
+                            node = node.Parent;
+                            RotateLeft(node);
+                        }
+
+                        if (node.Parent is not null)
+                        {
+                            node.Parent.Color = NodeColor.Black;
+                            if (node.Parent.Parent is not null)
+                            {
+                                node.Parent.Parent.Color = NodeColor.Red;
+                                RotateRight(node.Parent.Parent);
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Parent of the parent is null");
+                            }
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Parent is null");
+                        }
+                    }
+                }
+                else
+                {
+                    var uncle = node.Parent.Parent?.Left;
+                    if (uncle is not null && uncle.Color.Equals(NodeColor.Red))
+                    {
+                        node.Parent.Color = NodeColor.Black;
+                        uncle.Color = NodeColor.Black;
+                        if (node.Parent.Parent is not null)
+                        {
+                            node.Parent.Parent.Color = NodeColor.Red;
+                            node = node.Parent.Parent;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Parent of the parent is null");
+                        }
+                    }
+                    else
+                    {
+                        if (node == node.Parent.Left)
+                        {
+                            node = node.Parent;
+                            RotateRight(node);
+                        }
+
+                        if (node.Parent is not null)
+                        {
+                            node.Parent.Color = NodeColor.Black;
+                            if (node.Parent.Parent is not null)
+                            {
+                                node.Parent.Parent.Color = NodeColor.Red;
+                                RotateLeft(node.Parent.Parent);
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Parent of the parent is null");
+                            }
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Parent is null");
+                        }
+                    }
+                }
+            }
+
+            if (_root is not null) _root.Color = NodeColor.Black;
+            else throw new InvalidOperationException("Root is null");
+        }
+
+        /// <summary>
+        /// Rotate the tree to the left
+        /// </summary>
+        /// <param name="node">Node from where to start the rotation</param>
+        private void RotateLeft(Node? node)
+        {
+            var temp = node?.Right;
+            if (node is not null && temp is not null)
+            {
+                node.Right = temp.Left;
+                if (temp.Left is not null)
+                {
+                    temp.Left.Parent = node;
+                }
+
+                temp.Parent = node.Parent;
+                if (node.Parent is null)
+                {
+                    _root = temp;
+                }
+                else if (node == node.Parent.Left)
+                {
+                    node.Parent.Left = temp;
+                }
+                else
+                {
+                    node.Parent.Right = temp;
+                }
+
+                temp.Left = node;
+                node.Parent = temp;
+            }
+            else
+            {
+                throw new InvalidOperationException("Node or temp is null");
+            }
+        }
+
+        /// <summary>
+        /// Rotate the tree to the right
+        /// </summary>
+        /// <param name="node">Node from where to start the rotation</param>
+        private void RotateRight(Node? node)
+        {
+            var temp = node?.Left;
+            if (node is not null && temp is not null)
+            {
+                node.Left = temp.Right;
+                if (temp.Right is not null)
+                {
+                    temp.Right.Parent = node;
+                }
+
+                temp.Parent = node.Parent;
+                if (node.Parent is null)
+                {
+                    _root = temp;
+                }
+                else if (node == node.Parent.Right)
+                {
+                    node.Parent.Right = temp;
+                }
+                else
+                {
+                    node.Parent.Left = temp;
+                }
+
+                temp.Right = node;
+                node.Parent = temp;
+            }
+            else
+            {
+                throw new InvalidOperationException("Node or temp is null");
+            }
+        }
+
+        /// <inheritdoc/>
+        public bool Remove(TKey key)
+        {
+            var node = FindNode(key);
+            if (node is null)
+            {
+                return false;
+            }
+
+            if (node.Left is not null && node.Right is not null)
+            {
+                var temp = GetMinimum(node.Right);
+                if (temp is null) throw new InvalidOperationException("Temp is null");
+                node.Key = temp.Key;
+                node.Value = temp.Value;
+                node = temp;
+            }
+
+            var child = node.Right ?? node.Left;
+            if (child is not null)
+            {
+                child.Parent = node.Parent;
+                if (node.Parent is null)
+                {
+                    _root = child;
+                }
+                else if (node == node.Parent.Left)
+                {
+                    node.Parent.Left = child;
+                }
+                else
+                {
+                    node.Parent.Right = child;
+                }
+            }
+            else if (node.Parent is null)
+            {
+                _root = null;
+            }
+            else
+            {
+                if (node == node.Parent.Left)
+                {
+                    node.Parent.Left = null;
+                }
+                else
+                {
+                    node.Parent.Right = null;
+                }
+                FixTree(node);
+            }
+
+            _count--;
+            return true;
+        }
+
+        /// <summary>
+        /// Find a node in the tree
+        /// </summary>
+        private Node? FindNode(TKey key)
+        {
+            var current = _root;
+            while (current is not null)
+            {
+                int comparison = current.Key.CompareTo(key);
+                
+                if (comparison < 0)
+                {
+                    current = current.Left;
+                }
+                else if (comparison > 0)
+                {
+                    current = current.Right;
+                }
+                else
+                {
+                    return current;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Get the minimum node in the tree
+        /// </summary>
+        private Node? GetMinimum(Node? node)
+        {
+            while (node?.Left is not null)
+            {
+                node = node.Left;
+            }
+            return node;
+        }
+
+        /// <inheritdoc/>
+        public void Add(KeyValuePair<TKey, TValue> item)
+        {
+           Add(item.Key, item.Value);
+        }
+
+        /// <inheritdoc/>
+        public void Clear()
+        {
+            _root = null;
+            _count = 0;
+        }
+
+        /// <inheritdoc/>
+        public bool Contains(KeyValuePair<TKey, TValue> item)
+        {
+            return FindNode(item.Key) is not null;
+        }
+
+        /// <inheritdoc/>
+        public bool ContainsKey(TKey key)
+        {
+            return FindNode(key) is not null;
+        }
+
+        /// <inheritdoc/>
+        public bool TryGetValue(TKey key, out TValue value)
+        {
+            var node = FindNode(key);
+            if (node is null)
+            {
+                value = default!;
+                return false;
+            }
+            value = node.Value;
+            return true;
+        }
+
+        /// <inheritdoc/>
+        public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+        {
+            ArgumentNullException.ThrowIfNull(array);
+            if (arrayIndex < 0 || arrayIndex > array.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+            }
+            if (array.Length - arrayIndex < Count)
+            {
+                throw new ArgumentException("Array is too small");
+            }
+
+            foreach (var item in this)
+            {
+                array[arrayIndex++] = item;
+            }
+        }
+
+        /// <inheritdoc/>
+        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+        {
+            return InOrderTraversal(_root).GetEnumerator();
+        }
+
+        /// <inheritdoc/>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        /// <summary>
+        /// In order traversal of the tree
+        /// </summary>
+        private IEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversal(Node? node)
+        {
+            if (node is null) yield break;
+            foreach (var item in InOrderTraversal(node.Left))
+            {
+                yield return item;
+            }
+            yield return new KeyValuePair<TKey, TValue>(node.Key, node.Value);
+            foreach (var item in InOrderTraversal(node.Right))
+            {
+                yield return item;
+            }
+        }
+
+        /// <summary>
+        /// Get the tree as an array
+        /// </summary>
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            info.AddValue("Count", _count);
+            info.AddValue("Items", this.ToArray());
+        }
+
+        /// <inheritdoc/>
+        public void ReadXml(XmlReader reader)
+        {
+            var count = int.Parse(reader.GetAttribute("Count") ?? throw new InvalidOperationException("Count is null"));
+            
+            reader.ReadStartElement();
+            var items = new KeyValuePair<TKey, TValue>[count];
+            for (var i = 0; i < count; i++)
+            {
+                reader.ReadStartElement("Item");
+                var keySerializer = new XmlSerializer(typeof(TKey));
+                var valueSerializer = new XmlSerializer(typeof(TValue));
+                var key = (TKey)keySerializer.Deserialize(reader)! ?? throw new InvalidOperationException("Key is null");
+                var value = (TValue)valueSerializer.Deserialize(reader)! ?? throw new InvalidOperationException("Value is null");
+                reader.ReadEndElement();
+                items[i] = new KeyValuePair<TKey, TValue>(key, value);
+            }
+            reader.ReadEndElement();
+
+            foreach (var item in items)
+            {
+                Add(item.Key, item.Value);
+            }
+            
+            if(count != _count) throw new InvalidOperationException("XML count is different from the actual count");
+        }
+
+        /// <inheritdoc/>
+        public void WriteXml(XmlWriter writer)
+        {
+            writer.WriteAttributeString("Count", _count.ToString());
+            foreach (var item in this)
+            {
+                writer.WriteStartElement("Item");
+                var keySerializer = new XmlSerializer(typeof(TKey));
+                var valueSerializer = new XmlSerializer(typeof(TValue));
+                keySerializer.Serialize(writer, item.Key);
+                valueSerializer.Serialize(writer, item.Value);
+                writer.WriteEndElement();
+            }
+        }
+
+        /// <inheritdoc/>
+        public System.Xml.Schema.XmlSchema GetSchema()
+        {
+            return null;
+        }
+
+        /// <inheritdoc/>
+        public IAsyncEnumerator<KeyValuePair<TKey, TValue>> GetAsyncEnumerator(CancellationToken cancellationToken = default)
+        {
+            return new RedBlackTreeAsyncEnumerator(_root, cancellationToken);
+        }
+
+        /// <summary>
+        /// Async enumerator for the tree map
+        /// </summary>
+        private class RedBlackTreeAsyncEnumerator(Node? root, CancellationToken cancellationToken)
+            : IAsyncEnumerator<KeyValuePair<TKey, TValue>>
+        {
+            private readonly CancellationToken _cancellationToken = cancellationToken;
+            private readonly Stack<Node?> _stack = new();
+            private Node? _currentNode = null;
+
+            /// <inheritdoc/>
+            public ValueTask DisposeAsync()
+            {
+                return ValueTask.CompletedTask;
+            }
+
+            /// <inheritdoc/>
+            public ValueTask<bool> MoveNextAsync()
+            {
+                if (_currentNode is null)
+                {
+                    _currentNode = root;
+                    while (_currentNode is not null)
+                    {
+                        _stack.Push(_currentNode);
+                        _currentNode = _currentNode.Left;
+                    }
+                }
+
+                if (_stack.Count > 0)
+                {
+                    _currentNode = _stack.Pop();
+                    if (_currentNode is not null)
+                    {
+                        var rightNode = _currentNode.Right;
+                        while (rightNode is not null)
+                        {
+                            _stack.Push(rightNode);
+                            rightNode = rightNode.Left;
+                        }
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Right node is null");
+                    }
+
+                    return ValueTask.FromResult(true);
+                }
+
+                return ValueTask.FromResult(false);
+            }
+
+            /// <inheritdoc/>
+            public KeyValuePair<TKey, TValue> Current => new(_currentNode?.Key ?? throw new InvalidOperationException("Current node is null"), _currentNode.Value ?? throw new InvalidOperationException("Current node is null"));
+        }
+    }
+
+    /// <summary>
+    ///  Red-black tree map JSON converter
+    /// </summary>
+  public class RedBlackTreeJsonConverter<TKey, TValue> : JsonConverter<RedBlackTree<TKey, TValue>>
+    where TKey : class, IComparable<TKey>
+{
+    /// <inheritdoc/>
+    public override RedBlackTree<TKey, TValue> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var tree = new RedBlackTree<TKey, TValue>();
+        var count = 0;
+
+        if (reader.TokenType != JsonTokenType.StartObject)
+        {
+            throw new JsonException("Expected start of object.");
+        }
+
+        while (reader.Read())
+        {
+            switch (reader.TokenType)
+            {
+                case JsonTokenType.EndObject:
+                    if(count > tree.Count) throw new JsonException("JSON count is different from the actual count");
+                    return tree;
+                case JsonTokenType.PropertyName:
+                    var propertyName = reader.GetString();
+
+                    switch (propertyName)
+                    {
+                        // Si la propriété est "Count", on peut l'ignorer.
+                        case "Count":
+                            count = JsonSerializer.Deserialize<int>(ref reader, options);
+                            break;
+                        // Si la propriété est "Items", on la traite comme une liste d'objets
+                        case "Items":
+                        {
+                            if (reader.TokenType == JsonTokenType.PropertyName)
+                            {
+                                while (reader.Read())
+                                {
+                                    if (reader.TokenType == JsonTokenType.EndArray)
+                                    {
+                                        break;
+                                    }
+
+                                    if (reader.TokenType != JsonTokenType.StartObject) continue;
+                                    TKey key = default!;
+                                    TValue value = default!;
+
+                                    while (reader.Read())
+                                    {
+                                        if (reader.TokenType == JsonTokenType.EndObject)
+                                        {
+                                            break;
+                                        }
+
+                                        if (reader.TokenType != JsonTokenType.PropertyName) continue;
+                                        var innerPropertyName = reader.GetString();
+                                        reader.Read(); // Passer à la valeur
+
+                                        switch (innerPropertyName)
+                                        {
+                                            case "Key":
+                                                key = JsonSerializer.Deserialize<TKey>(ref reader, options) ?? throw new InvalidOperationException("Key is null");
+                                                break;
+                                            case "Value":
+                                                value = JsonSerializer.Deserialize<TValue>(ref reader, options) ?? throw new InvalidOperationException("Value is null");
+                                                break;
+                                        }
+                                    }
+
+                                    tree.Add(key, value);
+                                }
+                            }
+
+                            break;
+                        }
+                    }
+                    break;
+            }
+        }
+
+        throw new JsonException("Unexpected end of JSON");
+    }
+
+    /// <inheritdoc/>
+    public override void Write(Utf8JsonWriter writer, RedBlackTree<TKey, TValue> value, JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+
+        writer.WriteNumber("Count", value.Count);
+
+        writer.WriteStartArray("Items");
+        foreach (var item in value)
+        {
+            writer.WriteStartObject();
+            writer.WritePropertyName("Key");
+            JsonSerializer.Serialize(writer, item.Key, options);
+            writer.WritePropertyName("Value");
+            JsonSerializer.Serialize(writer, item.Value, options);
+            writer.WriteEndObject();
+        }
+        writer.WriteEndArray();
+
+        writer.WriteEndObject();
+    }
+}
+
+    /// <summary>
+    ///  Red-black tree map JSON converter factory
+    /// </summary>
+    public class RedBlackTreeMapJsonConverterFactory : JsonConverterFactory
+    {
+        /// <inheritdoc/>
+        public override bool CanConvert(Type typeToConvert)
+        {
+            if (!typeof(RedBlackTree<,>).IsAssignableFrom(typeToConvert.GetGenericTypeDefinition()))
+            {
+                return false;
+            }
+
+            var keyType = typeToConvert.GetGenericArguments()[0];
+            var valueType = typeToConvert.GetGenericArguments()[1];
+            return typeof(IComparable<>).MakeGenericType(keyType).IsAssignableFrom(keyType);
+        }
+
+        /// <inheritdoc/>
+        public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+        {
+            var keyType = typeToConvert.GetGenericArguments()[0];
+            var valueType = typeToConvert.GetGenericArguments()[1];
+            var converterType = typeof(RedBlackTreeJsonConverter<,>).MakeGenericType(keyType, valueType);
+            return (JsonConverter)Activator.CreateInstance(converterType)! ?? throw new InvalidOperationException("Converter is null");
+        }
+    }
+
