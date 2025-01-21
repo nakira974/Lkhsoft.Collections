@@ -1,4 +1,6 @@
-﻿namespace Lkhsoft.Collections.Test;
+﻿using Lkhsoft.Collections.Graphs;
+
+namespace Lkhsoft.Collections.Test;
 
 [TestFixture]
     public class GraphTests
@@ -107,5 +109,22 @@
             }
 
             Assert.That(nodes, Is.EqualTo(new[] { "A", "B" }));
+        }
+        
+        [Test]
+        public void GetOutgoingEdges_ShouldReturnCorrectOutgoingEdges()
+        {
+            var graph = new Graph<string>
+            {
+                "A",
+                "B",
+                "C"
+            };
+            graph.AddEdge("A", "B");
+            graph.AddEdge("A", "C");
+
+            var outgoingEdges = graph.GetOutgoingEdges("A");
+
+            Assert.That(outgoingEdges, Is.EqualTo(new HashSet<string> { "B", "C" }));
         }
     }

@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using System.Xml.Serialization;
+using Lkhsoft.Collections.Bst;
 using NUnit.Framework;
 
 namespace Lkhsoft.Collections.Test;

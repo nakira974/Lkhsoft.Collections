@@ -80,7 +80,7 @@ public class Trie : ICollection<string>
 
         var currentChar = pattern[index];
 
-        if (currentChar == '?') // Masque : '?' correspond à n'importe quel caractère
+        if (currentChar is '?') // Masque : '?' correspond à n'importe quel caractère
         {
             foreach (var child in node.Children.Values)
             {
@@ -167,7 +167,7 @@ public class Trie : ICollection<string>
     /// <inheritdoc/>
     public void CopyTo(string[] array, int arrayIndex)
     {
-        if (array == null) throw new ArgumentNullException(nameof(array));
+        if (array is null) throw new ArgumentNullException(nameof(array));
         if (arrayIndex < 0 || arrayIndex > array.Length) throw new ArgumentOutOfRangeException(nameof(arrayIndex));
         if (array.Length - arrayIndex < Count) throw new ArgumentException("Insufficient space in target array.");
 

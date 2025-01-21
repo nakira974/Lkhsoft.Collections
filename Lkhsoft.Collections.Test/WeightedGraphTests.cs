@@ -1,4 +1,6 @@
-﻿namespace Lkhsoft.Collections.Test;
+﻿using Lkhsoft.Collections.Graphs;
+
+namespace Lkhsoft.Collections.Test;
 
     [TestFixture]
     public class WeightedGraphTests

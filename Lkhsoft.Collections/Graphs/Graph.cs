@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace Lkhsoft.Collections;
+namespace Lkhsoft.Collections.Graphs;
 
 /// <summary>
 ///   A graph is a collection of nodes and edges where each edge connects two nodes
@@ -10,7 +10,7 @@ namespace Lkhsoft.Collections;
         /// <summary>
         /// The adjacency list of the graph where the key is the node and the value is the list of neighbors
         /// </summary>
-        private readonly Dictionary<TValue, HashSet<TValue>> _adjacencyList;
+        private protected readonly Dictionary<TValue, HashSet<TValue>> _adjacencyList;
 
         /// <summary>
         /// Default constructor
@@ -73,7 +73,7 @@ namespace Lkhsoft.Collections;
         /// <inheritdoc/>
         public void CopyTo(TValue[] array, int arrayIndex)
         {
-            if (array == null) throw new ArgumentNullException(nameof(array));
+            if (array is null) throw new ArgumentNullException(nameof(array));
             if (arrayIndex < 0 || arrayIndex >= array.Length) throw new ArgumentOutOfRangeException(nameof(arrayIndex));
             if (array.Length - arrayIndex < Count) throw new ArgumentException("Array is too small");
 
@@ -93,5 +93,17 @@ namespace Lkhsoft.Collections;
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+        
+        /// <summary>
+        /// Get the neighbors of a node
+        /// </summary>
+        public IEnumerable<TValue> GetOutgoingEdges(TValue node)
+        {
+            if (_adjacencyList.TryGetValue(node, out var edges))
+            {
+                return edges;
+            }
+            return new List<TValue>();
         }
     }

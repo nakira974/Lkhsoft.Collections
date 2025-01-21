@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace Lkhsoft.Collections;
+namespace Lkhsoft.Collections.Graphs;
 
 /// <summary>
 /// A graph is a collection of nodes and edges where each edge connects two nodes and has a weight
@@ -155,5 +155,41 @@ public class WeightedGraph<TWeight, TValue> : Graph<TValue>, IDictionary<TWeight
             }
             _weightedEdges[weight].Add(from);
             _weightedEdges[weight].Add(to);
+        }
+        
+        /// <summary>
+        /// Get the weight of an edge between two nodes
+        /// </summary>
+        public TWeight GetEdgeWeight(TValue from, TValue to)
+        {
+            foreach (var (weight, neighbors) in _weightedEdges)
+            {
+                if (neighbors.Contains(from) && neighbors.Contains(to))
+                {
+                    return weight;
+                }
+            }
+            throw new KeyNotFoundException($"No edge between {from} and {to}.");
+        }
+        
+        /// <summary>
+        /// Get the neighbors of a specific node
+        /// </summary>
+        public new IEnumerable<TValue> GetOutgoingEdges(TValue node)
+        {
+            // Parcours des arêtes avec chaque poids
+            foreach (var (weight, neighbors) in _weightedEdges)
+            {
+                // Vérifie si le nœud actuel est dans l'ensemble des voisins pour ce poids
+                if (!neighbors.Contains(node)) continue;
+                // Pour chaque voisin, sauf le nœud actuel
+                foreach (var neighbor in neighbors)
+                {
+                    if (!neighbor.Equals(node))
+                    {
+                        yield return neighbor;
+                    }
+                }
+            }
         }
     }

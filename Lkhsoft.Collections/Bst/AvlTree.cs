@@ -2,7 +2,7 @@
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace Lkhsoft.Collections;
+namespace Lkhsoft.Collections.Bst;
 
 /// <summary>
 /// AVL tree implementation
