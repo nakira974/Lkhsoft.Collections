@@ -16,7 +16,7 @@ namespace Lkhsoft.Collections.Bst;
 /// Red-black tree implementation
 /// </summary>
 [JsonConverter(typeof(RedBlackTreeJsonConverterFactory))]
-public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerable<T> where T : class, IComparable<T>
+public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerable<T> where T : IComparable<T>
 {
     /// <summary>
     ///  Root node of the tree
@@ -113,7 +113,10 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
         if (_root is null)
             _root = new Node(item) {Color = NodeColor.Black};
         else
+        {
+            if(Contains(item)) throw new InvalidOperationException("Item already exists");
             Add(_root, item);
+        }
         _count++;
     }
 
@@ -624,7 +627,14 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
         }
 
         /// <inheritdoc/>
-        public T Current => _currentNode?.Value;
+        public T Current
+        {
+            get
+            {
+                if (_currentNode is not null) return _currentNode.Value;
+                throw new InvalidOperationException("Value is null");
+            }
+        }
     }
 }
 
@@ -632,7 +642,7 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
 /// Red-black tree JSON converter
 /// </summary>
 /// <typeparam name="T">Stored type inside the tree</typeparam>
-public class RedBlackTreeJsonConverter<T> : JsonConverter<RedBlackTree<T>> where T : class, IComparable<T>
+public class RedBlackTreeJsonConverter<T> : JsonConverter<RedBlackTree<T>> where T : IComparable<T>
 {
     /// <inheritdoc/>
     public override RedBlackTree<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -666,7 +676,7 @@ public class RedBlackTreeJsonConverter<T> : JsonConverter<RedBlackTree<T>> where
                                     if (reader.TokenType == JsonTokenType.EndArray) break;
 
                                     if (reader.TokenType != JsonTokenType.StartObject) continue;
-                                    T value = null!;
+                                    T value = default;
 
                                     while (reader.Read())
                                     {
@@ -751,7 +761,7 @@ public class RedBlackTreeJsonConverterFactory : JsonConverterFactory
 [JsonConverter(typeof(RedBlackTreeMapJsonConverterFactory))]
 public class RedBlackTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable,
     IAsyncEnumerable<KeyValuePair<TKey, TValue>>
-    where TKey : class, IComparable<TKey>
+    where TKey : IComparable<TKey>
 {
     /// <summary>
     /// Root node of the tree
@@ -868,7 +878,10 @@ public class RedBlackTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSeriali
         if (_root is null)
             _root = new Node(key, value) {Color = NodeColor.Black};
         else
+        {
+            if(ContainsKey(key)) throw new InvalidOperationException("Key already exists");
             Add(_root, key, value);
+        }
         _count++;
     }
 
@@ -1336,9 +1349,16 @@ public class RedBlackTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSeriali
         }
 
         /// <inheritdoc/>
-        public KeyValuePair<TKey, TValue> Current =>
-            new(_currentNode?.Key ?? throw new InvalidOperationException("Current node is null"),
-                _currentNode.Value ?? throw new InvalidOperationException("Current node is null"));
+        public KeyValuePair<TKey, TValue> Current
+        {
+            get
+            {
+                if (_currentNode is not null)
+                    return new KeyValuePair<TKey, TValue>(_currentNode.Key ?? throw new InvalidOperationException("Current node is null"),
+                        _currentNode.Value ?? throw new InvalidOperationException("Current node is null"));
+                throw new InvalidOperationException("Current node is null");
+            }
+        }
     }
 }
 
@@ -1346,7 +1366,7 @@ public class RedBlackTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSeriali
 ///  Red-black tree map JSON converter
 /// </summary>
 public class RedBlackTreeJsonConverter<TKey, TValue> : JsonConverter<RedBlackTree<TKey, TValue>>
-    where TKey : class, IComparable<TKey>
+    where TKey : IComparable<TKey>
 {
     /// <inheritdoc/>
     public override RedBlackTree<TKey, TValue> Read(ref Utf8JsonReader reader, Type typeToConvert,

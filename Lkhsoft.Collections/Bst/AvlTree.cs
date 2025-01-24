@@ -72,6 +72,7 @@ public class AvlTree<T> : ICollection<T>, IXmlSerializable where T : IComparable
     /// <inheritdoc/>
     public void Add(T item)
     {
+        if(Contains(item)) throw new InvalidOperationException("Duplicate items are not allowed in an AVL tree.");
         _root = Add(_root, item);
         _count++;
     }
@@ -347,7 +348,7 @@ public class AvlTree<T> : ICollection<T>, IXmlSerializable where T : IComparable
 /// AVL tree map implementation
 /// </summary>
 public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
-    where TKey : class, IComparable<TKey>, IXmlSerializable where TValue : class, IXmlSerializable
+    where TKey : IComparable<TKey>
 {
     private class Node(TKey key, TValue value)
     {
@@ -424,6 +425,7 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
     /// <inheritdoc/>
     public void Add(TKey key, TValue value)
     {
+        if (ContainsKey(key)) throw new InvalidOperationException("Key already exists");
         _root = Add(_root, key, value);
         _count++;
     }
@@ -453,7 +455,7 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
             return true;
         }
 
-        value = null!;
+        value = default;
         return false;
     }
 
@@ -520,7 +522,7 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
                 node.Right = Add(node.Right, key, value);
                 break;
             default:
-                throw new ArgumentException($"Duplicate key '{key}'.");
+                throw new InvalidOperationException("Key already exists");
         }
 
         UpdateHeight(node);
