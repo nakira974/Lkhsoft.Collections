@@ -16,8 +16,11 @@ public class TrieTests
     {
         _trie.Add("hello");
 
-        Assert.That(_trie.Contains("hello"), Is.True);
-        Assert.That(_trie.Count, Is.EqualTo(1));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(_trie.Contains("hello"), Is.True);
+            Assert.That(_trie.Count, Is.EqualTo(1));
+        }
     }
 
     [Test]
@@ -27,10 +30,13 @@ public class TrieTests
         _trie.Add("world");
         _trie.Add("trie");
 
-        Assert.That(_trie.Contains("hello"), Is.True);
-        Assert.That(_trie.Contains("world"), Is.True);
-        Assert.That(_trie.Contains("trie"), Is.True);
-        Assert.That(_trie.Count, Is.EqualTo(3));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(_trie.Contains("hello"), Is.True);
+            Assert.That(_trie.Contains("world"), Is.True);
+            Assert.That(_trie.Contains("trie"), Is.True);
+            Assert.That(_trie.Count, Is.EqualTo(3));
+        }
     }
 
     [Test]
@@ -39,8 +45,11 @@ public class TrieTests
         _trie.Add("hello");
         _trie.Remove("hello");
 
-        Assert.That(_trie.Contains("hello"), Is.False);
-        Assert.That(_trie.Count, Is.EqualTo(0));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(_trie.Contains("hello"), Is.False);
+            Assert.That(_trie.Count, Is.EqualTo(0));
+        }
     }
 
     [Test]
@@ -50,8 +59,11 @@ public class TrieTests
 
         _trie.Remove("world");
 
-        Assert.That(_trie.Contains("hello"), Is.True);
-        Assert.That(_trie.Count, Is.EqualTo(1));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(_trie.Contains("hello"), Is.True);
+            Assert.That(_trie.Count, Is.EqualTo(1));
+        }
     }
 
     [Test]
@@ -62,9 +74,12 @@ public class TrieTests
 
         _trie.Clear();
 
-        Assert.That(_trie.Contains("hello"), Is.False);
-        Assert.That(_trie.Contains("world"), Is.False);
-        Assert.That(_trie.Count, Is.EqualTo(0));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(_trie.Contains("hello"), Is.False);
+            Assert.That(_trie.Contains("world"), Is.False);
+            Assert.That(_trie.Count, Is.EqualTo(0));
+        }
     }
 
     [Test]

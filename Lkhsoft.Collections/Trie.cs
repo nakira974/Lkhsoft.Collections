@@ -1,4 +1,8 @@
-﻿using System.Collections;
+﻿#region
+
+using System.Collections;
+
+#endregion
 
 namespace Lkhsoft.Collections;
 
@@ -16,7 +20,7 @@ public class Trie : ICollection<string>
         /// Children of the node
         /// </summary>
         public Dictionary<char, TrieNode> Children { get; } = new();
-        
+
         /// <summary>
         /// Indicates whether the node is the end of a word
         /// </summary>
@@ -27,7 +31,7 @@ public class Trie : ICollection<string>
     /// Root node of the trie
     /// </summary>
     private readonly TrieNode _root = new();
-    
+
     /// <summary>
     /// Words count in the trie
     /// </summary>
@@ -35,7 +39,7 @@ public class Trie : ICollection<string>
 
     /// <inheritdoc/>
     public int Count => _count;
-    
+
     /// <inheritdoc/>
     public bool IsReadOnly => false;
 
@@ -47,10 +51,7 @@ public class Trie : ICollection<string>
         var node = _root;
         foreach (var c in item)
         {
-            if (!node.Children.ContainsKey(c))
-            {
-                node.Children[c] = new TrieNode();
-            }
+            if (!node.Children.ContainsKey(c)) node.Children[c] = new TrieNode();
 
             node = node.Children[c];
         }
@@ -73,22 +74,15 @@ public class Trie : ICollection<string>
     /// </summary>
     private bool ContainsWithMask(string pattern, TrieNode node, int index)
     {
-        if (index == pattern.Length)
-        {
-            return node.IsEndOfWord;
-        }
+        if (index == pattern.Length) return node.IsEndOfWord;
 
         var currentChar = pattern[index];
 
         if (currentChar is '?') // Masque : '?' correspond à n'importe quel caractère
         {
             foreach (var child in node.Children.Values)
-            {
                 if (ContainsWithMask(pattern, child, index + 1))
-                {
                     return true;
-                }
-            }
         }
         else if (node.Children.TryGetValue(currentChar, out var child))
         {
@@ -133,7 +127,6 @@ public class Trie : ICollection<string>
         if (!shouldDeleteChild) return false;
         node.Children.Remove(currentChar);
         return !node.IsEndOfWord && node.Children.Count == 0;
-
     }
 
     /// <inheritdoc/>
@@ -147,22 +140,18 @@ public class Trie : ICollection<string>
     /// </summary>
     private IEnumerable<string> Traverse(TrieNode node, string prefix)
     {
-        if (node.IsEndOfWord)
-        {
-            yield return prefix;
-        }
+        if (node.IsEndOfWord) yield return prefix;
 
         foreach (var kvp in node.Children)
-        {
-            foreach (var word in Traverse(kvp.Value, prefix + kvp.Key))
-            {
-                yield return word;
-            }
-        }
+        foreach (var word in Traverse(kvp.Value, prefix + kvp.Key))
+            yield return word;
     }
 
     /// <inheritdoc/>
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
 
     /// <inheritdoc/>
     public void CopyTo(string[] array, int arrayIndex)
@@ -171,9 +160,6 @@ public class Trie : ICollection<string>
         if (arrayIndex < 0 || arrayIndex > array.Length) throw new ArgumentOutOfRangeException(nameof(arrayIndex));
         if (array.Length - arrayIndex < Count) throw new ArgumentException("Insufficient space in target array.");
 
-        foreach (var item in this)
-        {
-            array[arrayIndex++] = item;
-        }
+        foreach (var item in this) array[arrayIndex++] = item;
     }
 }

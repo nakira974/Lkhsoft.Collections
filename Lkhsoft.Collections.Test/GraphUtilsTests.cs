@@ -1,4 +1,8 @@
-﻿using Lkhsoft.Collections.Graphs;
+﻿#region
+
+using Lkhsoft.Collections.Graphs;
+
+#endregion
 
 namespace Lkhsoft.Collections.Test;
 
@@ -22,7 +26,7 @@ public class GraphUtilsTests
 
         var result = GraphUtils.Bfs(graph, "A");
 
-        Assert.That(result, Is.EqualTo(new List<string> { "A", "B", "C", "D" }));
+        Assert.That(result, Is.EqualTo(new List<string> {"A", "B", "C", "D"}));
     }
 
     [Test]
@@ -42,9 +46,9 @@ public class GraphUtilsTests
 
         var result = GraphUtils.Dfs(graph, "A");
 
-        Assert.That(result, Is.EqualTo(new List<string> { "A", "C", "D", "B" }));
+        Assert.That(result, Is.EqualTo(new List<string> {"A", "C", "D", "B"}));
     }
-    
+
     [Test]
     public void Dijkstra_ShouldReturnCorrectShortestPaths()
     {
@@ -63,9 +67,12 @@ public class GraphUtilsTests
 
         var distances = GraphUtils.Dijkstra(graph, "A");
 
-        Assert.That(distances["A"], Is.EqualTo(0));
-        Assert.That(distances["B"], Is.EqualTo(1));
-        Assert.That(distances["C"], Is.EqualTo(3));
-        Assert.That(distances["D"], Is.EqualTo(4));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(distances["A"], Is.EqualTo(0));
+            Assert.That(distances["B"], Is.EqualTo(1));
+            Assert.That(distances["C"], Is.EqualTo(3));
+            Assert.That(distances["D"], Is.EqualTo(4));
+        }
     }
 }
