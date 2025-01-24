@@ -1,28 +1,29 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 
-namespace Lkhsoft.Collections.Graphs;
-
-/// <summary>
-/// A graph is a collection of nodes and edges where each edge connects two nodes and has a weight
-/// </summary>
-public class WeightedGraph<TWeight, TValue> : Graph<TValue>, IDictionary<TWeight, ISet<TValue>>
-        where TValue : class, IComparable<TValue> where TWeight :  IComparable<TWeight>
+namespace Lkhsoft.Collections.Graphs
 {
+    /// <summary>
+    /// A graph is a collection of nodes and edges where each edge connects two nodes and has a weight
+    /// </summary>
+    public class WeightedGraph<TWeight, TValue> : Graph<TValue>, IDictionary<TValue, Dictionary<TValue, TWeight>>
+        where TValue : class, IComparable<TValue> where TWeight : IComparable<TWeight>
+    {
         /// <summary>
-        /// The adjacency list of the graph where the key is the weight of the edge and the value is the list of neighbors
+        /// The adjacency list of the graph where the key is a node and the value is a dictionary of neighbors with their respective weights
         /// </summary>
-        private readonly Dictionary<TWeight, ISet<TValue>> _weightedEdges;
+        private readonly Dictionary<TValue, Dictionary<TValue, TWeight>> _weightedEdges;
 
         /// <inheritdoc/>
         public WeightedGraph()
         {
-            _weightedEdges = new Dictionary<TWeight, ISet<TValue>>();
+            _weightedEdges = new Dictionary<TValue, Dictionary<TValue, TWeight>>();
         }
 
         /// <summary>
-        /// Get or set the neighbors of a node with a specific weight
+        /// Get or set the neighbors of a node with their respective weights
         /// </summary>
-        public ISet<TValue> this[TWeight key]
+        public Dictionary<TValue, TWeight> this[TValue key]
         {
             get
             {
@@ -36,20 +37,20 @@ public class WeightedGraph<TWeight, TValue> : Graph<TValue>, IDictionary<TWeight
             {
                 if (_weightedEdges.ContainsKey(key))
                 {
-                    _weightedEdges[key] = new HashSet<TValue>(value);
+                    _weightedEdges[key] = new Dictionary<TValue, TWeight>(value);
                 }
                 else
                 {
-                    _weightedEdges.Add(key, new HashSet<TValue>(value));
+                    _weightedEdges.Add(key, new Dictionary<TValue, TWeight>(value));
                 }
             }
         }
 
         /// <inheritdoc/>
-        public ICollection<TWeight> Keys => _weightedEdges.Keys;
+        public ICollection<TValue> Keys => _weightedEdges.Keys;
 
         /// <inheritdoc/>
-        public ICollection<ISet<TValue>> Values => _weightedEdges.Values;
+        public ICollection<Dictionary<TValue, TWeight>> Values => _weightedEdges.Values;
 
         /// <inheritdoc/>
         public new int Count => _weightedEdges.Count;
@@ -58,28 +59,28 @@ public class WeightedGraph<TWeight, TValue> : Graph<TValue>, IDictionary<TWeight
         public new bool IsReadOnly => false;
 
         /// <inheritdoc/>
-        public void Add(TWeight key, ISet<TValue> value)
+        public void Add(TValue key, Dictionary<TValue, TWeight> value)
         {
             if (!_weightedEdges.ContainsKey(key))
             {
-                _weightedEdges.Add(key, new HashSet<TValue>(value));
+                _weightedEdges.Add(key, new Dictionary<TValue, TWeight>(value));
             }
         }
 
         /// <inheritdoc/>
-        public bool ContainsKey(TWeight key)
+        public bool ContainsKey(TValue key)
         {
             return _weightedEdges.ContainsKey(key);
         }
 
         /// <inheritdoc/>
-        public bool Remove(TWeight key)
+        public bool Remove(TValue key)
         {
             return _weightedEdges.Remove(key);
         }
 
         /// <inheritdoc/>
-        public bool TryGetValue(TWeight key, out ISet<TValue> value)
+        public bool TryGetValue(TValue key, out Dictionary<TValue, TWeight> value)
         {
             if (_weightedEdges.TryGetValue(key, out var edge))
             {
@@ -91,7 +92,7 @@ public class WeightedGraph<TWeight, TValue> : Graph<TValue>, IDictionary<TWeight
         }
 
         /// <inheritdoc/>
-        public void Add(KeyValuePair<TWeight, ISet<TValue>> item)
+        public void Add(KeyValuePair<TValue, Dictionary<TValue, TWeight>> item)
         {
             Add(item.Key, item.Value);
         }
@@ -103,13 +104,13 @@ public class WeightedGraph<TWeight, TValue> : Graph<TValue>, IDictionary<TWeight
         }
 
         /// <inheritdoc/>
-        public bool Contains(KeyValuePair<TWeight, ISet<TValue>> item)
+        public bool Contains(KeyValuePair<TValue, Dictionary<TValue, TWeight>> item)
         {
-            return _weightedEdges.ContainsKey(item.Key) && _weightedEdges[item.Key].SetEquals(new HashSet<TValue>(item.Value));
+            return _weightedEdges.ContainsKey(item.Key) && _weightedEdges[item.Key].Equals(item.Value);
         }
 
         /// <inheritdoc/>
-        public void CopyTo(KeyValuePair<TWeight, ISet<TValue>>[] array, int arrayIndex)
+        public void CopyTo(KeyValuePair<TValue, Dictionary<TValue, TWeight>>[] array, int arrayIndex)
         {
             if (array == null) throw new ArgumentNullException(nameof(array));
             if (arrayIndex < 0 || arrayIndex >= array.Length) throw new ArgumentOutOfRangeException(nameof(arrayIndex));
@@ -117,14 +118,14 @@ public class WeightedGraph<TWeight, TValue> : Graph<TValue>, IDictionary<TWeight
 
             foreach (var kvp in _weightedEdges)
             {
-                array[arrayIndex++] = new KeyValuePair<TWeight, ISet<TValue>>(kvp.Key, kvp.Value);
+                array[arrayIndex++] = new KeyValuePair<TValue, Dictionary<TValue, TWeight>>(kvp.Key, kvp.Value);
             }
         }
 
         /// <inheritdoc/>
-        public bool Remove(KeyValuePair<TWeight, ISet<TValue>> item)
+        public bool Remove(KeyValuePair<TValue, Dictionary<TValue, TWeight>> item)
         {
-            if (_weightedEdges.ContainsKey(item.Key) && _weightedEdges[item.Key].SetEquals(new HashSet<TValue>(item.Value)))
+            if (_weightedEdges.ContainsKey(item.Key) && _weightedEdges[item.Key].Equals(item.Value))
             {
                 return _weightedEdges.Remove(item.Key);
             }
@@ -132,7 +133,7 @@ public class WeightedGraph<TWeight, TValue> : Graph<TValue>, IDictionary<TWeight
         }
 
         /// <inheritdoc/>
-        public new IEnumerator<KeyValuePair<TWeight, ISet<TValue>>> GetEnumerator()
+        public new IEnumerator<KeyValuePair<TValue, Dictionary<TValue, TWeight>>> GetEnumerator()
         {
             return _weightedEdges.GetEnumerator();
         }
@@ -148,48 +149,60 @@ public class WeightedGraph<TWeight, TValue> : Graph<TValue>, IDictionary<TWeight
         /// </summary>
         public void AddEdge(TValue from, TValue to, TWeight weight)
         {
-            if (!base.Contains(from) || !base.Contains(to)) return;
-            if (!_weightedEdges.ContainsKey(weight))
+            if (!base.Contains(from))
             {
-                _weightedEdges[weight] = new HashSet<TValue>();
+                base.Add(from);
             }
-            _weightedEdges[weight].Add(from);
-            _weightedEdges[weight].Add(to);
+            else
+            {
+                _ = base.GetOutgoingEdges(from).Add(to);
+            }
+
+            if (!base.Contains(to))
+            {
+                base.Add(to);
+            }
+            else
+            {
+                _ = base.GetOutgoingEdges(to).Add(from);
+            }
+
+            if (!_weightedEdges.ContainsKey(from))
+            {
+                _weightedEdges[from] = new Dictionary<TValue, TWeight>();
+            }
+
+            if (!_weightedEdges.ContainsKey(to))
+            {
+                _weightedEdges[to] = new Dictionary<TValue, TWeight>();
+            }
+
+            _weightedEdges[from][to] = weight;
+            _weightedEdges[to][from] = weight; // Pour un graphe non orienté
         }
-        
+
         /// <summary>
         /// Get the weight of an edge between two nodes
         /// </summary>
         public TWeight GetEdgeWeight(TValue from, TValue to)
         {
-            foreach (var (weight, neighbors) in _weightedEdges)
+            if (_weightedEdges.TryGetValue(from, out var neighbors) && neighbors.TryGetValue(to, out var weight))
             {
-                if (neighbors.Contains(from) && neighbors.Contains(to))
-                {
-                    return weight;
-                }
+                return weight;
             }
             throw new KeyNotFoundException($"No edge between {from} and {to}.");
         }
-        
+
         /// <summary>
         /// Get the neighbors of a specific node
         /// </summary>
         public new IEnumerable<TValue> GetOutgoingEdges(TValue node)
         {
-            // Parcours des arêtes avec chaque poids
-            foreach (var (weight, neighbors) in _weightedEdges)
+            if (_weightedEdges.TryGetValue(node, out var neighbors))
             {
-                // Vérifie si le nœud actuel est dans l'ensemble des voisins pour ce poids
-                if (!neighbors.Contains(node)) continue;
-                // Pour chaque voisin, sauf le nœud actuel
-                foreach (var neighbor in neighbors)
-                {
-                    if (!neighbor.Equals(node))
-                    {
-                        yield return neighbor;
-                    }
-                }
+                return neighbors.Keys;
             }
+            return new List<TValue>();
         }
     }
+}

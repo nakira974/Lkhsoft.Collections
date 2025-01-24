@@ -10,28 +10,28 @@ namespace Lkhsoft.Collections.Graphs;
         /// <summary>
         /// The adjacency list of the graph where the key is the node and the value is the list of neighbors
         /// </summary>
-        private protected readonly Dictionary<TValue, HashSet<TValue>> _adjacencyList;
+        private protected readonly Dictionary<TValue, HashSet<TValue>> AdjacencyList;
 
         /// <summary>
         /// Default constructor
         /// </summary>
         public Graph()
         {
-            _adjacencyList = new Dictionary<TValue, HashSet<TValue>>();
+            AdjacencyList = new Dictionary<TValue, HashSet<TValue>>();
         }
 
         /// <inheritdoc/>
-        public virtual int Count => _adjacencyList.Count;
+        public virtual int Count => AdjacencyList.Count;
 
         /// <inheritdoc/>
         public virtual bool IsReadOnly => false;
 
         /// <inheritdoc/>
-        public void Add(TValue item)
+        public virtual void Add(TValue item)
         {
-            if (!_adjacencyList.ContainsKey(item))
+            if (!AdjacencyList.ContainsKey(item))
             {
-                _adjacencyList[item] = new HashSet<TValue>();
+                AdjacencyList[item] = new HashSet<TValue>();
             }
         }
 
@@ -39,45 +39,46 @@ namespace Lkhsoft.Collections.Graphs;
         /// Add an edge between two vertices
         /// </summary>
         /// <param name="from">Node from where to start</param>
-        /// <param name="to">Node to be join</param>
-        public void AddEdge(TValue from, TValue to)
+        /// <param name="to">Node to be joint</param>
+        public virtual void AddEdge(TValue from, TValue to)
         {
-            if (!_adjacencyList.ContainsKey(from) || !_adjacencyList.ContainsKey(to)) return;
-            _adjacencyList[from].Add(to);
-            _adjacencyList[to].Add(from); // Pour un graphe non orienté
+            if (!AdjacencyList.TryGetValue(from, out var fromValue) || !AdjacencyList.TryGetValue(to, out var toValue)) 
+                return; 
+            fromValue.Add(to); 
+            toValue.Add(from); // Pour un graphe non orienté
         }
 
         /// <inheritdoc/>
-        public bool Remove(TValue item)
+        public virtual bool Remove(TValue item)
         {
-            if (!_adjacencyList.TryGetValue(item, out var value)) return false;
+            if (!AdjacencyList.TryGetValue(item, out var value)) return false;
             foreach (var neighbor in value)
             {
-                _adjacencyList[neighbor].Remove(item);
+                AdjacencyList[neighbor].Remove(item);
             }
-            return _adjacencyList.Remove(item);
+            return AdjacencyList.Remove(item);
         }
 
         /// <inheritdoc/>
         public virtual void Clear()
         {
-            _adjacencyList.Clear();
+            AdjacencyList.Clear();
         }
 
         /// <inheritdoc/>
-        public bool Contains(TValue item)
+        public virtual bool Contains(TValue item)
         {
-            return _adjacencyList.ContainsKey(item);
+            return AdjacencyList.ContainsKey(item);
         }
 
         /// <inheritdoc/>
-        public void CopyTo(TValue[] array, int arrayIndex)
+        public virtual void CopyTo(TValue[] array, int arrayIndex)
         {
-            if (array is null) throw new ArgumentNullException(nameof(array));
-            if (arrayIndex < 0 || arrayIndex >= array.Length) throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+        ArgumentNullException.ThrowIfNull(array);
+        if (arrayIndex < 0 || arrayIndex >= array.Length) throw new ArgumentOutOfRangeException(nameof(arrayIndex));
             if (array.Length - arrayIndex < Count) throw new ArgumentException("Array is too small");
 
-            foreach (var key in _adjacencyList.Keys)
+            foreach (var key in AdjacencyList.Keys)
             {
                 array[arrayIndex++] = key;
             }
@@ -86,7 +87,7 @@ namespace Lkhsoft.Collections.Graphs;
         /// <inheritdoc/>
         public IEnumerator<TValue> GetEnumerator()
         {
-            return _adjacencyList.Keys.GetEnumerator();
+            return AdjacencyList.Keys.GetEnumerator();
         }
 
         /// <inheritdoc/>
@@ -98,12 +99,8 @@ namespace Lkhsoft.Collections.Graphs;
         /// <summary>
         /// Get the neighbors of a node
         /// </summary>
-        public IEnumerable<TValue> GetOutgoingEdges(TValue node)
+        public virtual ISet<TValue> GetOutgoingEdges(TValue node)
         {
-            if (_adjacencyList.TryGetValue(node, out var edges))
-            {
-                return edges;
-            }
-            return new List<TValue>();
+            return AdjacencyList.TryGetValue(node, out var edges) ? edges : [];
         }
     }

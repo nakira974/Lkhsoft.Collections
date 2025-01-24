@@ -1,7 +1,9 @@
 ﻿using Lkhsoft.Collections.Graphs;
+using NUnit.Framework;
+using System.Collections.Generic;
 
-namespace Lkhsoft.Collections.Test;
-
+namespace Lkhsoft.Collections.Test
+{
     [TestFixture]
     public class WeightedGraphTests
     {
@@ -15,13 +17,17 @@ namespace Lkhsoft.Collections.Test;
             };
             graph.AddEdge("A", "B", 1);
 
-            Assert.That(graph.ContainsKey(1), Is.True);
-            Assert.That(graph[1].Contains("A"), Is.True);
-            Assert.That(graph[1].Contains("B"), Is.True);
+            Assert.That(graph.ContainsKey("A"), Is.True);
+            Assert.That(graph["A"].ContainsKey("B"), Is.True);
+            Assert.That(graph["A"]["B"], Is.EqualTo(1));
+
+            Assert.That(graph.ContainsKey("B"), Is.True);
+            Assert.That(graph["B"].ContainsKey("A"), Is.True);
+            Assert.That(graph["B"]["A"], Is.EqualTo(1));
         }
 
         [Test]
-        public void Remove_ShouldRemoveWeightAndEdges()
+        public void Remove_ShouldRemoveNodeAndEdges()
         {
             var graph = new WeightedGraph<int, string>
             {
@@ -30,13 +36,15 @@ namespace Lkhsoft.Collections.Test;
             };
             graph.AddEdge("A", "B", 1);
 
-            graph.Remove(1);
+            graph.Remove("A");
 
-            Assert.That(graph.ContainsKey(1), Is.False);
+            Assert.That(graph.ContainsKey("A"), Is.False);
+            Assert.That(graph.ContainsKey("B"), Is.True);
+            Assert.That(graph["B"].ContainsKey("A"), Is.False);
         }
 
         [Test]
-        public void Clear_ShouldRemoveAllWeightsAndEdges()
+        public void Clear_ShouldRemoveAllNodesAndEdges()
         {
             var graph = new WeightedGraph<int, string>
             {
@@ -51,7 +59,7 @@ namespace Lkhsoft.Collections.Test;
         }
 
         [Test]
-        public void ContainsKey_ShouldReturnTrueIfWeightExists()
+        public void ContainsKey_ShouldReturnTrueIfNodeExists()
         {
             var graph = new WeightedGraph<int, string>
             {
@@ -60,20 +68,19 @@ namespace Lkhsoft.Collections.Test;
             };
             graph.AddEdge("A", "B", 1);
 
-            Assert.That(graph.ContainsKey(1), Is.True);
+            Assert.That(graph.ContainsKey("A"), Is.True);
         }
 
         [Test]
-        public void ContainsKey_ShouldReturnFalseIfWeightDoesNotExist()
+        public void ContainsKey_ShouldReturnFalseIfNodeDoesNotExist()
         {
             var graph = new WeightedGraph<int, string>();
-            if (graph == null) throw new ArgumentNullException(nameof(graph));
 
-            Assert.That(graph.ContainsKey(1), Is.False);
+            Assert.That(graph.ContainsKey("A"), Is.False);
         }
 
         [Test]
-        public void TryGetValue_ShouldReturnTrueIfWeightExists()
+        public void TryGetValue_ShouldReturnTrueIfNodeExists()
         {
             var graph = new WeightedGraph<int, string>
             {
@@ -82,33 +89,39 @@ namespace Lkhsoft.Collections.Test;
             };
             graph.AddEdge("A", "B", 1);
 
-            Assert.That(graph.TryGetValue(1, out var value), Is.True);
-            Assert.That(value.Contains("A"), Is.True);
-            Assert.That(value.Contains("B"), Is.True);
+            Assert.That(graph.TryGetValue("A", out var value), Is.True);
+            Assert.That(value.ContainsKey("B"), Is.True);
+            Assert.That(value["B"], Is.EqualTo(1));
         }
 
         [Test]
-        public void TryGetValue_ShouldReturnFalseIfWeightDoesNotExist()
+        public void TryGetValue_ShouldReturnFalseIfNodeDoesNotExist()
         {
             var graph = new WeightedGraph<int, string>();
-            if (graph == null) throw new ArgumentNullException(nameof(graph));
 
-            Assert.That(graph.TryGetValue(1, out var value), Is.False);
+            Assert.That(graph.TryGetValue("A", out var value), Is.False);
             Assert.That(value, Is.Null);
         }
 
         [Test]
-        public void Add_ShouldAddWeightAndEdges()
+        public void Add_ShouldAddNodeAndEdges()
         {
-            var graph = new WeightedGraph<int, string> {{1, new HashSet<string> { "A", "B" }}};
+            var graph = new WeightedGraph<int, string>();
+            graph.Add("A");
+            graph.Add("B");
+            graph.AddEdge("A", "B", 1);
 
-            Assert.That(graph.ContainsKey(1), Is.True);
-            Assert.That(graph[1].Contains("A"), Is.True);
-            Assert.That(graph[1].Contains("B"), Is.True);
+            Assert.That(graph.ContainsKey("A"), Is.True);
+            Assert.That(graph["A"].ContainsKey("B"), Is.True);
+            Assert.That(graph["A"]["B"], Is.EqualTo(1));
+
+            Assert.That(graph.ContainsKey("B"), Is.True);
+            Assert.That(graph["B"].ContainsKey("A"), Is.True);
+            Assert.That(graph["B"]["A"], Is.EqualTo(1));
         }
 
         [Test]
-        public void GetEnumerator_ShouldReturnEnumeratorForWeightsAndEdges()
+        public void GetEnumerator_ShouldReturnEnumeratorForNodesAndEdges()
         {
             var graph = new WeightedGraph<int, string>
             {
@@ -118,13 +131,18 @@ namespace Lkhsoft.Collections.Test;
             graph.AddEdge("A", "B", 1);
 
             using var enumerator = graph.GetEnumerator();
-            var weightsAndEdges = new List<KeyValuePair<int, ISet<string>>>();
+            var nodesAndEdges = new List<KeyValuePair<string, Dictionary<string, int>>>();
 
             while (enumerator.MoveNext())
             {
-                weightsAndEdges.Add(enumerator.Current);
+                nodesAndEdges.Add(enumerator.Current);
             }
 
-            Assert.That(weightsAndEdges, Is.EqualTo(new[] { new KeyValuePair<int, ISet<string>>(1, new HashSet<string> { "A", "B" }) }));
+            Assert.That(nodesAndEdges, Is.EqualTo(new[]
+            {
+                new KeyValuePair<string, Dictionary<string, int>>("A", new Dictionary<string, int> { { "B", 1 } }),
+                new KeyValuePair<string, Dictionary<string, int>>("B", new Dictionary<string, int> { { "A", 1 } })
+            }));
         }
     }
+}

@@ -8,7 +8,7 @@ public class DirectedGraph<TValue> : Graph<TValue> where TValue : class, ICompar
     /// <summary>
     /// Default constructor
     /// </summary>
-    public DirectedGraph() : base()
+    public DirectedGraph()
     {
     }
 
@@ -21,18 +21,18 @@ public class DirectedGraph<TValue> : Graph<TValue> where TValue : class, ICompar
     {
         if (base.Contains(from) && base.Contains(to))
         {
-            base._adjacencyList[from].Add(to);
+            base.AdjacencyList[from].Add(to);
         }
     }
 
     /// <summary>
     /// Gets the outgoing edges of a node
     /// </summary>
-    public IEnumerable<TValue> GetOutgoingEdges(TValue node)
+    public new IEnumerable<TValue> GetOutgoingEdges(TValue node)
     {
         if (base.Contains(node))
         {
-            return base._adjacencyList[node];
+            return base.AdjacencyList[node];
         }
         return new List<TValue>();
     }
@@ -43,7 +43,7 @@ public class DirectedGraph<TValue> : Graph<TValue> where TValue : class, ICompar
     public IEnumerable<TValue> GetIncomingEdges(TValue node)
     {
         var incomingEdges = new List<TValue>();
-        foreach (var kvp in base._adjacencyList)
+        foreach (var kvp in base.AdjacencyList)
         {
             if (kvp.Value.Contains(node))
             {

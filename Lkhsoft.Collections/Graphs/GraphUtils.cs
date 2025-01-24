@@ -82,59 +82,57 @@ public static class GraphUtils
     /// <param name="source">The source node.</param>
     /// <param name="destination">The optional destination node. If specified, stops when the destination is reached.</param>
     /// <returns>An enumerable containing the nodes in the shortest path from source to destination, or from source to all nodes if no destination is specified.</returns>
-public static Dictionary<TValue, TWeight> Dijkstra<TWeight, TValue>(
-        WeightedGraph<TWeight, TValue> graph,
-        TValue source)
-        where TWeight : struct, IComparable<TWeight>
-        where TValue : class, IComparable<TValue>
-    {
-        if (!graph.Contains(source))
+ public static Dictionary<TValue, TWeight> Dijkstra<TWeight, TValue>(
+            WeightedGraph<TWeight, TValue> graph,
+            TValue source)
+            where TWeight : struct, IComparable<TWeight>
+            where TValue : class, IComparable<TValue>
         {
-            throw new ArgumentException("Source node is not in the graph.");
-        }
-
-        var distances = new Dictionary<TValue, TWeight>();
-        var previous = new Dictionary<TValue, TValue?>(); // To reconstruct the shortest path
-        var priorityQueue = new SortedSet<(TWeight, TValue)>(Comparer<(TWeight, TValue)>.Create((a, b) =>
-        {
-            var compare = a.Item1.CompareTo(b.Item1); // Compare distances
-            return compare == 0 ? Comparer<TValue>.Default.Compare(a.Item2, b.Item2) : compare;
-        }));
-
-        // Initialize distances and priority queue
-        foreach (var edge in graph)  // Iterate over the dictionary's KeyValuePair<TWeight, ISet<TValue>>
-        {
-            foreach (var node in edge.Value)  // Iterate over the ISet<TValue> for each weight
+            if (!graph.Contains(source))
             {
+                throw new ArgumentException("Source node is not in the graph.");
+            }
+
+            var distances = new Dictionary<TValue, TWeight>();
+            var previous = new Dictionary<TValue, TValue?>(); // To reconstruct the shortest path
+            var priorityQueue = new SortedSet<(TWeight, TValue)>(Comparer<(TWeight, TValue)>.Create((a, b) =>
+            {
+                var compare = a.Item1.CompareTo(b.Item1); // Compare distances
+                return compare == 0 ? Comparer<TValue>.Default.Compare(a.Item2, b.Item2) : compare;
+            }));
+
+            // Initialize distances and priority queue
+            foreach (var kvp in graph)
+            {
+                var node = kvp.Key;
                 distances[node] = (dynamic)default(TWeight)! + (dynamic)int.MaxValue; // Initialize to a large value
                 previous[node] = null;
             }
-        }
 
-        distances[source] = (dynamic)0; // Distance to the source is 0
-        priorityQueue.Add((distances[source], source));
+            distances[source] = (dynamic)0; // Distance to the source is 0
+            priorityQueue.Add((distances[source], source));
 
-        // Main algorithm loop
-        while (priorityQueue.Count > 0)
-        {
-            var (currentDistance, currentNode) = priorityQueue.Min;
-            priorityQueue.Remove(priorityQueue.Min);
-
-            // Iterate over neighbors and update distances
-            foreach (var neighbor in graph.GetOutgoingEdges(currentNode))
+            // Main algorithm loop
+            while (priorityQueue.Count > 0)
             {
-                var edgeWeight = graph.GetEdgeWeight(currentNode, neighbor);
-                var newDistance = (dynamic)currentDistance + (dynamic)edgeWeight;
+                var (currentDistance, currentNode) = priorityQueue.Min;
+                priorityQueue.Remove(priorityQueue.Min);
 
-                if (distances.ContainsKey(neighbor) && newDistance.CompareTo(distances[neighbor]) >= 0) continue;
-                priorityQueue.Remove((distances[neighbor], neighbor)); // Remove old distance
-                distances[neighbor] = newDistance;
-                previous[neighbor] = currentNode;
-                priorityQueue.Add((newDistance, neighbor));
+                // Iterate over neighbors and update distances
+                foreach (var neighbor in graph.GetOutgoingEdges(currentNode))
+                {
+                    var edgeWeight = graph.GetEdgeWeight(currentNode, neighbor);
+                    var newDistance = (dynamic)currentDistance + (dynamic)edgeWeight;
+
+                    if (distances.ContainsKey(neighbor) && newDistance.CompareTo(distances[neighbor]) >= 0) continue;
+                    priorityQueue.Remove((distances[neighbor], neighbor)); // Remove old distance
+                    distances[neighbor] = newDistance;
+                    previous[neighbor] = currentNode;
+                    priorityQueue.Add((newDistance, neighbor));
+                }
             }
-        }
 
-        // Return the dictionary with the shortest distances from the source
-        return distances;
-    }
+            // Return the dictionary with the shortest distances from the source
+            return distances;
+        }
 }
