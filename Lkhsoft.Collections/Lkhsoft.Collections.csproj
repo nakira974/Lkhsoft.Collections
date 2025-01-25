@@ -4,6 +4,17 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Version>1.0.0-alpha</Version>
+        <Title>Lkhsoft.Collections</Title>
+        <Authors>Maxime Loukhal</Authors>
+        <Description>A set of useful collections such as graphs, binary search trees (AVL, Red Black), B-Tree, Trie and others</Description>
+        <PackageProjectUrl>https://github.com/nakira974/Lkhsoft.Collections</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/nakira974/Lkhsoft.Collections</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <Copyright>Copyright (c) Lkhsoft.Collections/Lkhsoft 2025</Copyright>
+        <PackageLicenseUrl>https://github.com/nakira974/Lkhsoft.Collections/blob/trunk/LICENCE.md</PackageLicenseUrl>
+        <PackageIcon>logo.png</PackageIcon>
+        <PackageTags>Graphs BST B-Tree Trie</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
@@ -45,6 +56,13 @@
         <Folder Include=".git\objects\info\"/>
         <Folder Include=".git\objects\pack\"/>
         <Folder Include=".git\refs\tags\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="logo.png">
+        <Pack>True</Pack>
+        <PackagePath></PackagePath>
+      </None>
     </ItemGroup>
 
 </Project>

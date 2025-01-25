@@ -642,7 +642,7 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
 /// Red-black tree JSON converter
 /// </summary>
 /// <typeparam name="T">Stored type inside the tree</typeparam>
-public class RedBlackTreeJsonConverter<T> : JsonConverter<RedBlackTree<T>> where T : IComparable<T>
+internal class RedBlackTreeJsonConverter<T> : JsonConverter<RedBlackTree<T>> where T : IComparable<T>
 {
     /// <inheritdoc/>
     public override RedBlackTree<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -734,7 +734,7 @@ public class RedBlackTreeJsonConverter<T> : JsonConverter<RedBlackTree<T>> where
 /// <summary>
 /// Red-black tree JSON converter factory
 /// </summary>
-public class RedBlackTreeJsonConverterFactory : JsonConverterFactory
+internal class RedBlackTreeJsonConverterFactory : JsonConverterFactory
 {
     /// <inheritdoc/>
     public override bool CanConvert(Type typeToConvert)

@@ -1,0 +1,36 @@
+name: Server's plugins NuGet package publish
+
+on:
+  push:
+    branches: [ "dev" ]
+  pull_request:
+    branches: [ "trunk", "dev" ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore dependencies
+        run: dotnet restore --configfile ./NuGet.Config
+
+      - name: Build
+        run: dotnet build --configuration ${{ github.ref == 'refs/heads/dev' && 'Debug' || 'Release' }} --no-restore
+
+      - name: Package NuGet
+        run: |
+          dotnet pack Lkhsoft.Collections\Lkhsoft.Collections.csproj --configuration ${{ github.ref == 'refs/heads/dev' && 'Debug' || 'Release' }} -o:package ${{ github.ref == 'refs/heads/dev' && '-p:VersionSuffix=prerelease' || '' }}
+
+      - name: Push generated package to GitHub registry
+        run: |
+          dotnet nuget update source nakira974.github --configfile ./NuGet.Config --username nakira974 --password ${{ secrets.NUGET_API_KEY }}  --store-password-in-clear-text
+          dotnet nuget push D:\a\Lkhsoft.Collections\Lkhsoft.Collections\package\*.nupkg --source nakira974.github --skip-duplicate
+
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
