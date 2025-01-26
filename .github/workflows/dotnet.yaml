@@ -25,7 +25,7 @@ jobs:
 
       - name: Package NuGet
         run: |
-          dotnet pack Lkhsoft.Collections\Lkhsoft.Collections.csproj --configuration ${{ github.ref == 'refs/heads/dev' && 'Debug' || 'Release' }} -o:package ${{ github.ref == 'refs/heads/dev' && '-p:VersionSuffix=prerelease' || '' }}
+          dotnet pack Lkhsoft.Collections\Lkhsoft.Collections.csproj --configuration ${{ github.ref == 'refs/heads/dev' && 'Debug' || 'Release' }} --include-symbols -o:package
 
       - name: Push generated package to GitHub registry
         run: |
@@ -33,4 +33,4 @@ jobs:
           dotnet nuget push D:\a\Lkhsoft.Collections\Lkhsoft.Collections\package\*.nupkg --source nakira974.github --skip-duplicate
 
       - name: Test
-        run: dotnet test --no-build --verbosity normal
+        run: dotnet test --verbosity normal
