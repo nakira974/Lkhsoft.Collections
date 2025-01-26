@@ -4,7 +4,7 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>1.0.1</Version>
+        <Version>$(AssemblyVersion)</Version>
         <Title>Lkhsoft.Collections</Title>
         <Authors>Maxime Loukhal</Authors>
         <Description>A set of useful collections such as graphs, binary search trees (AVL, Red Black), B-Tree, Trie and others</Description>
@@ -16,14 +16,16 @@
         <PackageIcon>logo.png</PackageIcon>
         <PackageTags>Graphs BST B-Tree Trie</PackageTags>
         <LangVersion>default</LangVersion>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Company>Lkhsoft</Company>
-        <AssemblyVersion>1.0.0</AssemblyVersion>
-        <FileVersion>1.0.0</FileVersion>
+        <AssemblyVersion>1.0.1</AssemblyVersion>
+        <FileVersion>$(AssemblyVersion)</FileVersion>
         <RepositoryType>git</RepositoryType>
         <PackageReleaseNotes>XML and JSON serialization now supported</PackageReleaseNotes>
     </PropertyGroup>
 
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <Version>$(AssemblyVersion)-alpha</Version>
+    </PropertyGroup>
     <ItemGroup>
       <None Update="logo.png">
         <Pack>True</Pack>
