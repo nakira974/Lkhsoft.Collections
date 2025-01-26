@@ -3,7 +3,7 @@ using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
 
-namespace Lkhsoft.Collections.Bst;
+namespace Lkhsoft.Collections.Trees.BTrees;
 
 /// <summary>
 /// BTree implementation

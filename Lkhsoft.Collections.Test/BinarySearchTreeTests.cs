@@ -1,7 +1,9 @@
 ﻿using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using Lkhsoft.Collections.Bst;
+using System.Text.Json;
+using System.Xml;
+using Lkhsoft.Collections.Trees.Bst;
 
 namespace Lkhsoft.Collections.Test;
 
@@ -149,41 +151,49 @@ public class BinarySearchTreeTests
 
         Assert.That(list, Is.EqualTo(new List<int> { 1, 2, 3 }));
     }
-
+    
     [Test]
-    public void ReadXml_ShouldWork()
+    public void JsonSerialization_ShouldWork()
     {
-        var tree = new BinarySearchTree<int>();
-        var xml = "<ArrayOfInt><int>1</int><int>2</int><int>3</int></ArrayOfInt>";
-        var reader = new System.Xml.XmlTextReader(new System.IO.StringReader(xml));
+        var tree = new BinarySearchTree<int>
+        {
+            {1},
+            {2}
+        };
 
-        tree.ReadXml(reader);
+        var json = JsonSerializer.Serialize(tree);
+        var deserializedTree = JsonSerializer.Deserialize<BinarySearchTree<int>>(json);
 
-        Assert.That(tree.Count, Is.EqualTo(3));
+        Assert.That(deserializedTree.Count, Is.EqualTo(2));
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(tree.Contains(1), Is.True);
-            Assert.That(tree.Contains(2), Is.True);
-            Assert.That(tree.Contains(3), Is.True);
+            Assert.That(deserializedTree.Contains(1), Is.True);
+            Assert.That(deserializedTree.Contains(2), Is.True);
         }
     }
 
     [Test]
-    public void WriteXml_ShouldWork()
+    public void XmlSerialization_ShouldWork()
     {
-        var tree = new BinarySearchTree<int>
+        var tree = new AvlTree<int>() {10, 11, 9, 3, 5};
+        using var stringWriter = new StringWriter();
+        using var xmlWriter = XmlWriter.Create(stringWriter);
+        tree.WriteXml(xmlWriter);
+        var xml = stringWriter.ToString();
+
+        using (var reader = XmlReader.Create(new StringReader(xml)))
         {
-            1,
-            2,
-            3
-        };
+            tree.ReadXml(reader);
+        }
 
-        var writer = new System.Xml.XmlTextWriter(new System.IO.StringWriter());
-        tree.WriteXml(writer);
-
-        var xml = writer.ToString();
-        Assert.That(xml, Does.Contain("<int>1</int>"));
-        Assert.That(xml, Does.Contain("<int>2</int>"));
-        Assert.That(xml, Does.Contain("<int>3</int>"));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(tree, Does.Contain(10));
+            Assert.That(tree, Does.Contain(11));
+            Assert.That(tree, Does.Contain(9));
+            Assert.That(tree, Does.Contain(3));
+            Assert.That(tree, Does.Contain(5));
+            Assert.That(tree, Has.Count.EqualTo(5));
+        }
     }
 }

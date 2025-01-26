@@ -1,7 +1,7 @@
 ﻿#region
 
 using System.Diagnostics;
-using Lkhsoft.Collections.Bst;
+using Lkhsoft.Collections.Trees.BTrees;
 
 #endregion
 
@@ -83,7 +83,7 @@ public class BTreeTests
         TestContext.Out.WriteLine($"Temps d'exécution de la recherche : {stopwatch.ElapsedMilliseconds} ms");
 
         // Ajouter une assertion pour vérifier que le temps est raisonnable
-        Assert.That(stopwatch.ElapsedMilliseconds, Is.LessThan(2000), "La recherche ne doit pas dépasser 2 secondes.");
+        Assert.That(stopwatch.ElapsedMilliseconds, Is.LessThan(50), "La recherche ne doit pas dépasser 2 secondes.");
 
     }
     

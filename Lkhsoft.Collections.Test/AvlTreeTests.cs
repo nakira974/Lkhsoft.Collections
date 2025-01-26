@@ -1,7 +1,8 @@
 ﻿#region
 
+using System.Text.Json;
 using System.Xml;
-using Lkhsoft.Collections.Bst;
+using Lkhsoft.Collections.Trees.Bst;
 
 #endregion
 
@@ -142,9 +143,29 @@ public class AvlTreeTests
 
         Assert.That(list, Is.EqualTo(Expected));
     }
-
+    
     [Test]
-    public void ReadXml_ShouldWork()
+    public void JsonSerialization_ShouldWork()
+    {
+        var tree = new AvlTree<int>
+        {
+            {1},
+            {2}
+        };
+
+        var json = JsonSerializer.Serialize(tree);
+        var deserializedTree = JsonSerializer.Deserialize<AvlTree<int>>(json);
+
+        Assert.That(deserializedTree.Count, Is.EqualTo(2));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(deserializedTree.Contains(1), Is.True);
+            Assert.That(deserializedTree.Contains(2), Is.True);
+        }
+    }
+    
+    [Test]
+    public void XmlSerialization_ShouldWork()
     {
         var tree = new AvlTree<int>() {10, 11, 9, 3, 5};
         using var stringWriter = new StringWriter();
@@ -152,7 +173,6 @@ public class AvlTreeTests
         tree.WriteXml(xmlWriter);
         var xml = stringWriter.ToString();
 
-        tree.Clear();
         using (var reader = XmlReader.Create(new StringReader(xml)))
         {
             tree.ReadXml(reader);
@@ -161,28 +181,11 @@ public class AvlTreeTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(tree, Does.Contain(10));
-            Assert.That(tree, Does.Contain(20));
-            Assert.That(tree, Does.Contain(15));
-            Assert.That(tree, Has.Count.EqualTo(3));
+            Assert.That(tree, Does.Contain(11));
+            Assert.That(tree, Does.Contain(9));
+            Assert.That(tree, Does.Contain(3));
+            Assert.That(tree, Does.Contain(5));
+            Assert.That(tree, Has.Count.EqualTo(5));
         }
-    }
-
-    [Test]
-    public void WriteXml_ShouldWork()
-    {
-        var tree = new AvlTree<int>
-        {
-            10,
-            20,
-            15
-        };
-
-        using var stringWriter = new StringWriter();
-        using var xmlWriter = XmlWriter.Create(stringWriter);
-        tree.WriteXml(xmlWriter);
-        var xml = stringWriter.ToString();
-        Assert.That(xml, Does.Contain("<int>10</int>"));
-        Assert.That(xml, Does.Contain("<int>20</int>"));
-        Assert.That(xml, Does.Contain("<int>15</int>"));
     }
 }

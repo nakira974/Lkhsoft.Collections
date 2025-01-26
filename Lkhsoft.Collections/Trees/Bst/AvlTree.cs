@@ -1,17 +1,21 @@
 ﻿#region
 
 using System.Collections;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
+using Lkhsoft.Collections.Trees.Serialization;
 
 #endregion
 
-namespace Lkhsoft.Collections.Bst;
+namespace Lkhsoft.Collections.Trees.Bst;
 
 /// <summary>
 /// AVL tree implementation
 /// </summary>
+[JsonConverter(typeof(AvlTreeJsonConverterFactory))]
 public class AvlTree<T> : ICollection<T>, IXmlSerializable where T : IComparable<T>
 {
     /// <summary>
@@ -327,26 +331,149 @@ public class AvlTree<T> : ICollection<T>, IXmlSerializable where T : IComparable
     public void ReadXml(XmlReader reader)
     {
         Clear();
-        reader.ReadStartElement();
-        while (reader.IsStartElement("Node"))
-        {
-            var value = (T) new XmlSerializer(typeof(T)).Deserialize(reader)!;
-            Add(value ?? throw new InvalidOperationException("Error while reading XML"));
-        }
 
-        reader.ReadEndElement();
+        // Désérialiser l'arbre
+        var serializer = new XmlSerializer(typeof(SerializedNodes<T>));
+        var nodes = (SerializedNodes<T>)serializer.Deserialize(reader)!;
+
+        // Ajouter les valeurs à la collection
+        nodes?.Nodes.ForEach(x => Add(x.Value));
+
+        // Valider la correspondance du count
+        if (nodes?.Count != Count)
+            throw new InvalidOperationException("Error while reading the AVL tree from XML");
     }
 
     /// <inheritdoc/>
     public void WriteXml(XmlWriter writer)
     {
-        foreach (var item in this) new XmlSerializer(typeof(T)).Serialize(writer, item);
+        var nodes = new List<SerializedNode<T>>(this.Count);
+        nodes.AddRange(this.Select(element => new SerializedNode<T>(element)));
+        var xmlNodes = new SerializedNodes<T>(nodes);
+        new XmlSerializer(typeof(SerializedNodes<T>)).Serialize(writer, xmlNodes);
+    }
+}
+
+/// <summary>
+/// AVL tree JSON converter
+/// </summary>
+/// <typeparam name="T">Stored type inside the tree</typeparam>
+public class AvlTreeJsonConverter<T> : JsonConverter<AvlTree<T>> where T : IComparable<T>
+{
+    /// <inheritdoc/>
+    public override AvlTree<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+          var tree = new AvlTree<T>();
+        var count = 0;
+
+        if (reader.TokenType != JsonTokenType.StartObject) throw new JsonException("Expected start of object.");
+
+        while (reader.Read())
+            switch (reader.TokenType)
+            {
+                case JsonTokenType.EndObject:
+                    if (count > tree.Count) throw new JsonException("JSON count is different from the actual count");
+                    return tree;
+                case JsonTokenType.PropertyName:
+                    var propertyName = reader.GetString();
+
+                    switch (propertyName)
+                    {
+                        // Si la propriété est "Count", on peut l'ignorer.
+                        case "Count":
+                            count = JsonSerializer.Deserialize<int>(ref reader, options);
+                            break;
+                        // Si la propriété est "Items", on la traite comme une liste d'objets
+                        case "Items":
+                        {
+                            if (reader.TokenType == JsonTokenType.PropertyName)
+                                while (reader.Read())
+                                {
+                                    if (reader.TokenType == JsonTokenType.EndArray) break;
+
+                                    if (reader.TokenType != JsonTokenType.StartObject) continue;
+                                    T value = default!;
+
+                                    while (reader.Read())
+                                    {
+                                        if (reader.TokenType == JsonTokenType.EndObject) break;
+
+                                        if (reader.TokenType != JsonTokenType.PropertyName) continue;
+                                        var innerPropertyName = reader.GetString();
+                                        reader.Read(); // Passer à la valeur
+
+                                        value = innerPropertyName switch
+                                        {
+                                            "Value" => JsonSerializer.Deserialize<T>(ref reader, options) ??
+                                                       throw new InvalidOperationException("Value is null"),
+                                            _ => value
+                                        };
+                                    }
+
+                                    tree.Add(value);
+                                }
+
+                            break;
+                        }
+                    }
+
+                    break;
+            }
+
+
+        throw new JsonException("Unexpected end of JSON");
+    }
+
+    /// <inheritdoc/>
+    public override void Write(Utf8JsonWriter writer, AvlTree<T> value, JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+
+        writer.WriteNumber("Count", value.Count);
+
+        writer.WriteStartArray("Items");
+        foreach (var item in value)
+        {
+            writer.WriteStartObject();
+            writer.WritePropertyName("Value");
+            JsonSerializer.Serialize(writer, item, options);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+
+        writer.WriteEndObject();
+    }
+}
+
+/// <summary>
+/// AVL tree JSON converter factory
+/// </summary>
+public class AvlTreeJsonConverterFactory : JsonConverterFactory
+{
+    /// <inheritdoc/>
+    public override bool CanConvert(Type typeToConvert)
+    {
+        if (!typeof(AvlTree<>).IsAssignableFrom(typeToConvert.GetGenericTypeDefinition())) return false;
+
+        var itemType = typeToConvert.GetGenericArguments()[0];
+        return typeof(IComparable<>).MakeGenericType(itemType).IsAssignableFrom(itemType);
+    }
+
+    /// <inheritdoc/>
+    public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+    {
+        var itemType = typeToConvert.GetGenericArguments()[0];
+        var converterType = typeof(AvlTreeJsonConverter<>).MakeGenericType(itemType);
+        return (JsonConverter) Activator.CreateInstance(converterType)! ??
+               throw new InvalidOperationException("Converter is null");
     }
 }
 
 /// <summary>
 /// AVL tree map implementation
 /// </summary>
+[JsonConverter(typeof(AvlTreeMapJsonConverterFactory))]
 public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
     where TKey : IComparable<TKey>
 {
@@ -590,7 +717,7 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
     /// <summary>
     /// Finds the node with the given key in the given subtree
     /// </summary>
-    private Node? FindNode(Node? node, TKey key)
+    private static Node? FindNode(Node? node, TKey key)
     {
         while (node is not null)
         {
@@ -614,7 +741,7 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
     /// <summary>
     /// Traverses the tree in in-order
     /// </summary>
-    private IEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversal(Node? node)
+    private static IEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversal(Node? node)
     {
         if (node is null) yield break;
         foreach (var kvp in InOrderTraversal(node.Left))
@@ -746,19 +873,17 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
     public void ReadXml(XmlReader reader)
     {
         Clear();
-        reader.ReadStartElement();
-        while (reader.IsStartElement("Node"))
-        {
-            var keySerializer = new XmlSerializer(typeof(TKey));
-            var valueSerializer = new XmlSerializer(typeof(TValue));
 
-            var key = (TKey) keySerializer.Deserialize(reader)!;
-            var value = (TValue) valueSerializer.Deserialize(reader)!;
+        // Désérialiser l'arbre
+        var serializer = new XmlSerializer(typeof(SerializedNodes<TKey, TValue>));
+        var nodes = (SerializedNodes<TKey, TValue>)serializer.Deserialize(reader)!;
 
-            Add(key, value);
-        }
+        // Ajouter les valeurs à la collection
+        nodes?.Nodes.ForEach(x => Add(x.Key, x.Value));
 
-        reader.ReadEndElement();
+        // Valider la correspondance du count
+        if (nodes?.Count != Count)
+            throw new InvalidOperationException("Error while reading the AVL tree from XML");
     }
 
     /// <inheritdoc/>
@@ -774,5 +899,131 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
             valueSerializer.Serialize(writer, kvp.Value);
             writer.WriteEndElement();
         }
+    }
+}
+
+/// <summary>
+///  AVL tree map JSON converter
+/// </summary>
+public class AvlTreeJsonConverter<TKey, TValue> : JsonConverter<AvlTree<TKey, TValue>>
+    where TKey : IComparable<TKey>
+{
+    /// <inheritdoc/>
+    public override AvlTree<TKey, TValue> Read(ref Utf8JsonReader reader, Type typeToConvert,
+        JsonSerializerOptions options)
+    {
+        var tree = new AvlTree<TKey, TValue>();
+        var count = 0;
+
+        if (reader.TokenType != JsonTokenType.StartObject) throw new JsonException("Expected start of object.");
+
+        while (reader.Read())
+            switch (reader.TokenType)
+            {
+                case JsonTokenType.EndObject:
+                    if (count > tree.Count) throw new JsonException("JSON count is different from the actual count");
+                    return tree;
+                case JsonTokenType.PropertyName:
+                    var propertyName = reader.GetString();
+
+                    switch (propertyName)
+                    {
+                        // Si la propriété est "Count", on peut l'ignorer.
+                        case "Count":
+                            count = JsonSerializer.Deserialize<int>(ref reader, options);
+                            break;
+                        // Si la propriété est "Items", on la traite comme une liste d'objets
+                        case "Items":
+                        {
+                            if (reader.TokenType == JsonTokenType.PropertyName)
+                                while (reader.Read())
+                                {
+                                    if (reader.TokenType == JsonTokenType.EndArray) break;
+
+                                    if (reader.TokenType != JsonTokenType.StartObject) continue;
+                                    TKey key = default!;
+                                    TValue value = default!;
+
+                                    while (reader.Read())
+                                    {
+                                        if (reader.TokenType == JsonTokenType.EndObject) break;
+
+                                        if (reader.TokenType != JsonTokenType.PropertyName) continue;
+                                        var innerPropertyName = reader.GetString();
+                                        reader.Read(); // Passer à la valeur
+
+                                        switch (innerPropertyName)
+                                        {
+                                            case "Key":
+                                                key = JsonSerializer.Deserialize<TKey>(ref reader, options) ??
+                                                      throw new InvalidOperationException("Key is null");
+                                                break;
+                                            case "Value":
+                                                value = JsonSerializer.Deserialize<TValue>(ref reader, options) ??
+                                                        throw new InvalidOperationException("Value is null");
+                                                break;
+                                        }
+                                    }
+
+                                    tree.Add(key, value);
+                                }
+
+                            break;
+                        }
+                    }
+
+                    break;
+            }
+
+        throw new JsonException("Unexpected end of JSON");
+    }
+
+    /// <inheritdoc/>
+    public override void Write(Utf8JsonWriter writer, AvlTree<TKey, TValue> value, JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+
+        writer.WriteNumber("Count", value.Count);
+
+        writer.WriteStartArray("Items");
+        foreach (var item in value)
+        {
+            writer.WriteStartObject();
+            writer.WritePropertyName("Key");
+            JsonSerializer.Serialize(writer, item.Key, options);
+            writer.WritePropertyName("Value");
+            JsonSerializer.Serialize(writer, item.Value, options);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+
+        writer.WriteEndObject();
+    }
+}
+
+/// <summary>
+///  AVL tree map JSON converter factory
+/// </summary>
+public class AvlTreeMapJsonConverterFactory : JsonConverterFactory
+{
+    /// <inheritdoc/>
+    public override bool CanConvert(Type typeToConvert)
+    {
+        if (!typeof(AvlTree<,>).IsAssignableFrom(typeToConvert.GetGenericTypeDefinition())) return false;
+
+        var keyType = typeToConvert.GetGenericArguments()[0];
+        var valueType = typeToConvert.GetGenericArguments()[1];
+        return typeof(IComparable<>).MakeGenericType(keyType).IsAssignableFrom(keyType);
+    }
+
+    /// <inheritdoc/>
+    public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+    {
+        var keyType = typeToConvert.GetGenericArguments()[0];
+        var valueType = typeToConvert.GetGenericArguments()[1];
+        var converterType = typeof(AvlTreeJsonConverter<,>).MakeGenericType(keyType, valueType);
+        return (JsonConverter) Activator.CreateInstance(converterType)! ??
+               throw new InvalidOperationException("Converter is null");
     }
 }

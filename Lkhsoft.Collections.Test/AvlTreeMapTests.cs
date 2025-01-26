@@ -1,4 +1,6 @@
-﻿using Lkhsoft.Collections.Bst;
+﻿using System.Text.Json;
+using System.Xml;
+using Lkhsoft.Collections.Trees.Bst;
 
 namespace Lkhsoft.Collections.Test;
 
@@ -230,5 +232,52 @@ public class AvlTreeMapTests
         var tree = new AvlTree<int, string> {{1, "one"}};
 
         Assert.That(tree.Remove(new KeyValuePair<int, string>(2, "two")), Is.False);
+    }
+    
+    [Test]
+    public void JsonSerialization_ShouldWork()
+    {
+        var tree = new AvlTree<string, int>
+        {
+            {"one", 1},
+            {"two", 2}
+        };
+
+        var json = JsonSerializer.Serialize(tree);
+        var deserializedTree = JsonSerializer.Deserialize<AvlTree<string, int>>(json);
+
+        Assert.That(deserializedTree.Count, Is.EqualTo(2));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(deserializedTree.ContainsKey("one"), Is.True);
+            Assert.That(deserializedTree.ContainsKey("two"), Is.True);
+            Assert.That(deserializedTree["one"], Is.EqualTo(1));
+            Assert.That(deserializedTree["two"], Is.EqualTo(2));
+        }
+    }
+    
+    [Test]
+    public void XmlSerialization_ShouldWork()
+    {
+        var tree = new AvlTree<int>() {10, 11, 9, 3, 5};
+        using var stringWriter = new StringWriter();
+        using var xmlWriter = XmlWriter.Create(stringWriter);
+        tree.WriteXml(xmlWriter);
+        var xml = stringWriter.ToString();
+
+        using (var reader = XmlReader.Create(new StringReader(xml)))
+        {
+            tree.ReadXml(reader);
+        }
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(tree, Does.Contain(10));
+            Assert.That(tree, Does.Contain(11));
+            Assert.That(tree, Does.Contain(9));
+            Assert.That(tree, Does.Contain(3));
+            Assert.That(tree, Does.Contain(5));
+            Assert.That(tree, Has.Count.EqualTo(5));
+        }
     }
 }

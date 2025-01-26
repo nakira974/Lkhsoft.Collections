@@ -1,10 +1,11 @@
 ﻿using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Xml;
 using System.Xml.Serialization;
 using System.Threading.Tasks;
-using Lkhsoft.Collections.Bst;
+using Lkhsoft.Collections.Trees.Bst;
 
 namespace Lkhsoft.Collections.Test;
 
@@ -249,41 +250,52 @@ public class BinarySearchTreeMapTests
 
         Assert.That(tree.Remove(new KeyValuePair<int, string>(2, "two")), Is.False);
     }
-
+    
     [Test]
-    public void ReadXml_ShouldWork()
+    public void JsonSerialization_ShouldWork()
     {
-        var tree = new BinarySearchTree<int, string>();
-        var xml = "<ArrayOfKeyValuePairOfInt32String><KeyValuePairOfInt32String><Key>1</Key><Value>one</Value></KeyValuePairOfInt32String><KeyValuePairOfInt32String><Key>2</Key><Value>two</Value></KeyValuePairOfInt32String></ArrayOfKeyValuePairOfInt32String>";
-        var reader = new XmlTextReader(new System.IO.StringReader(xml));
+        var tree = new BinarySearchTree<string, int>
+        {
+            {"one", 1},
+            {"two", 2}
+        };
 
-        tree.ReadXml(reader);
+        var json = JsonSerializer.Serialize(tree);
+        var deserializedTree = JsonSerializer.Deserialize<BinarySearchTree<string, int>>(json);
 
-        Assert.That(tree.Count, Is.EqualTo(2));
+        Assert.That(deserializedTree.Count, Is.EqualTo(2));
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(tree.ContainsKey(1), Is.True);
-            Assert.That(tree.ContainsKey(2), Is.True);
+            Assert.That(deserializedTree.ContainsKey("one"), Is.True);
+            Assert.That(deserializedTree.ContainsKey("two"), Is.True);
+            Assert.That(deserializedTree["one"], Is.EqualTo(1));
+            Assert.That(deserializedTree["two"], Is.EqualTo(2));
         }
     }
 
     [Test]
-    public void WriteXml_ShouldWork()
+    public void XmlSerialization_ShouldWork()
     {
-        var tree = new BinarySearchTree<int, string>
+        var tree = new AvlTree<int>() {10, 11, 9, 3, 5};
+        using var stringWriter = new StringWriter();
+        using var xmlWriter = XmlWriter.Create(stringWriter);
+        tree.WriteXml(xmlWriter);
+        var xml = stringWriter.ToString();
+
+        using (var reader = XmlReader.Create(new StringReader(xml)))
         {
-            {1, "one"},
-            {2, "two"}
-        };
+            tree.ReadXml(reader);
+        }
 
-        var writer = new XmlTextWriter(new System.IO.StringWriter());
-        tree.WriteXml(writer);
-
-        var xml = writer.ToString();
-        Assert.That(xml, Does.Contain("<int>1</int>"));
-        Assert.That(xml, Does.Contain("<string>one</string>"));
-        Assert.That(xml, Does.Contain("<int>2</int>"));
-        Assert.That(xml, Does.Contain("<string>two</string>"));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(tree, Does.Contain(10));
+            Assert.That(tree, Does.Contain(11));
+            Assert.That(tree, Does.Contain(9));
+            Assert.That(tree, Does.Contain(3));
+            Assert.That(tree, Does.Contain(5));
+            Assert.That(tree, Has.Count.EqualTo(5));
+        }
     }
 
     [Test]

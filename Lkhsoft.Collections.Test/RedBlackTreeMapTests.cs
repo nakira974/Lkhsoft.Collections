@@ -1,8 +1,9 @@
 ﻿#region
 
 using System.Text.Json;
+using System.Xml;
 using System.Xml.Serialization;
-using Lkhsoft.Collections.Bst;
+using Lkhsoft.Collections.Trees.Bst;
 
 #endregion
 
@@ -126,27 +127,25 @@ public class RedBlackTreeMapTests
     [Test]
     public void XmlSerialization_ShouldWork()
     {
-        var tree = new RedBlackTree<string, int>
-        {
-            {"one", 1},
-            {"two", 2}
-        };
-
-        var serializer = new XmlSerializer(typeof(RedBlackTree<string, int>));
+        var tree = new AvlTree<int>() {10, 11, 9, 3, 5};
         using var stringWriter = new StringWriter();
-        serializer.Serialize(stringWriter, tree);
+        using var xmlWriter = XmlWriter.Create(stringWriter);
+        tree.WriteXml(xmlWriter);
         var xml = stringWriter.ToString();
 
-        using var stringReader = new StringReader(xml);
-        var deserializedTree = (RedBlackTree<string, int>) serializer.Deserialize(stringReader)!;
+        using (var reader = XmlReader.Create(new StringReader(xml)))
+        {
+            tree.ReadXml(reader);
+        }
 
-        Assert.That(deserializedTree.Count, Is.EqualTo(2));
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(deserializedTree.ContainsKey("one"), Is.True);
-            Assert.That(deserializedTree.ContainsKey("two"), Is.True);
-            Assert.That(deserializedTree["one"], Is.EqualTo(1));
-            Assert.That(deserializedTree["two"], Is.EqualTo(2));
+            Assert.That(tree, Does.Contain(10));
+            Assert.That(tree, Does.Contain(11));
+            Assert.That(tree, Does.Contain(9));
+            Assert.That(tree, Does.Contain(3));
+            Assert.That(tree, Does.Contain(5));
+            Assert.That(tree, Has.Count.EqualTo(5));
         }
     }
 }

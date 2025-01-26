@@ -7,10 +7,11 @@ using System.Text.Json.Serialization;
 using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
+using Lkhsoft.Collections.Trees.Serialization;
 
 #endregion
 
-namespace Lkhsoft.Collections.Bst;
+namespace Lkhsoft.Collections.Trees.Bst;
 
 /// <summary>
 /// Red-black tree implementation
@@ -489,42 +490,30 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
         info.AddValue("Items", ToArray());
     }
 
-    /// <summary>
-    /// Deserialize the tree from XML
-    /// </summary>
-    /// <param name="reader">XmlReader containing tree as string</param>
+    /// <inheritdoc/>
     public void ReadXml(XmlReader reader)
     {
-        reader.ReadStartElement();
-        _count = int.Parse(reader.GetAttribute("Count") ?? throw new InvalidOperationException("Count is null"));
-        var items = new T[_count];
-        for (var i = 0; i < _count; i++)
-        {
-            reader.ReadStartElement("Item");
-            var itemSerializer = new XmlSerializer(typeof(T));
-            items[i] = (T) itemSerializer.Deserialize(reader)! ?? throw new InvalidOperationException("Item is null");
-            reader.ReadEndElement();
-        }
+        Clear();
 
-        reader.ReadEndElement();
+        // Désérialiser l'arbre
+        var serializer = new XmlSerializer(typeof(SerializedNodes<T>));
+        var nodes = (SerializedNodes<T>)serializer.Deserialize(reader)!;
 
-        foreach (var item in items) Add(item);
+        // Ajouter les valeurs à la collection
+        nodes?.Nodes.ForEach(x => Add(x.Value));
+
+        // Valider la correspondance du count
+        if (nodes?.Count != Count)
+            throw new InvalidOperationException("Error while reading the RB tree from XML");
     }
 
-    /// <summary>
-    /// Serialize the tree to XML
-    /// </summary>
-    /// <param name="writer">XmlWriter to write in</param>
+    /// <inheritdoc/>
     public void WriteXml(XmlWriter writer)
     {
-        writer.WriteAttributeString("Count", _count.ToString());
-        foreach (var item in this)
-        {
-            writer.WriteStartElement("Item");
-            var itemSerializer = new XmlSerializer(typeof(T));
-            itemSerializer.Serialize(writer, item);
-            writer.WriteEndElement();
-        }
+        var nodes = new List<SerializedNode<T>>(this.Count);
+        nodes.AddRange(this.Select(element => new SerializedNode<T>(element)));
+        var xmlNodes = new SerializedNodes<T>(nodes);
+        new XmlSerializer(typeof(SerializedNodes<T>)).Serialize(writer, xmlNodes);
     }
 
     /// <summary>
@@ -642,15 +631,15 @@ public class RedBlackTree<T> : ICollection<T>, IXmlSerializable, IAsyncEnumerabl
 /// Red-black tree JSON converter
 /// </summary>
 /// <typeparam name="T">Stored type inside the tree</typeparam>
-internal class RedBlackTreeJsonConverter<T> : JsonConverter<RedBlackTree<T>> where T : IComparable<T>
+public class RedBlackTreeJsonConverter<T> : JsonConverter<RedBlackTree<T>> where T : IComparable<T>
 {
     /// <inheritdoc/>
     public override RedBlackTree<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var tree = new RedBlackTree<T>();
+          var tree = new RedBlackTree<T>();
         var count = 0;
 
-        if (reader.TokenType != JsonTokenType.StartArray) throw new JsonException();
+        if (reader.TokenType != JsonTokenType.StartObject) throw new JsonException("Expected start of object.");
 
         while (reader.Read())
             switch (reader.TokenType)
@@ -676,7 +665,7 @@ internal class RedBlackTreeJsonConverter<T> : JsonConverter<RedBlackTree<T>> whe
                                     if (reader.TokenType == JsonTokenType.EndArray) break;
 
                                     if (reader.TokenType != JsonTokenType.StartObject) continue;
-                                    T value = default;
+                                    T value = default!;
 
                                     while (reader.Read())
                                     {
@@ -686,13 +675,12 @@ internal class RedBlackTreeJsonConverter<T> : JsonConverter<RedBlackTree<T>> whe
                                         var innerPropertyName = reader.GetString();
                                         reader.Read(); // Passer à la valeur
 
-                                        switch (innerPropertyName)
+                                        value = innerPropertyName switch
                                         {
-                                            case "Value":
-                                                value = JsonSerializer.Deserialize<T>(ref reader, options) ??
-                                                        throw new InvalidOperationException("Value is null");
-                                                break;
-                                        }
+                                            "Value" => JsonSerializer.Deserialize<T>(ref reader, options) ??
+                                                       throw new InvalidOperationException("Value is null"),
+                                            _ => value
+                                        };
                                     }
 
                                     tree.Add(value);
@@ -734,7 +722,7 @@ internal class RedBlackTreeJsonConverter<T> : JsonConverter<RedBlackTree<T>> whe
 /// <summary>
 /// Red-black tree JSON converter factory
 /// </summary>
-internal class RedBlackTreeJsonConverterFactory : JsonConverterFactory
+public class RedBlackTreeJsonConverterFactory : JsonConverterFactory
 {
     /// <inheritdoc/>
     public override bool CanConvert(Type typeToConvert)
@@ -1245,42 +1233,27 @@ public class RedBlackTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSeriali
     /// <inheritdoc/>
     public void ReadXml(XmlReader reader)
     {
-        var count = int.Parse(reader.GetAttribute("Count") ?? throw new InvalidOperationException("Count is null"));
+        Clear();
 
-        reader.ReadStartElement();
-        var items = new KeyValuePair<TKey, TValue>[count];
-        for (var i = 0; i < count; i++)
-        {
-            reader.ReadStartElement("Item");
-            var keySerializer = new XmlSerializer(typeof(TKey));
-            var valueSerializer = new XmlSerializer(typeof(TValue));
-            var key = (TKey) keySerializer.Deserialize(reader)! ?? throw new InvalidOperationException("Key is null");
-            var value = (TValue) valueSerializer.Deserialize(reader)! ??
-                        throw new InvalidOperationException("Value is null");
-            reader.ReadEndElement();
-            items[i] = new KeyValuePair<TKey, TValue>(key, value);
-        }
+        // Désérialiser l'arbre
+        var serializer = new XmlSerializer(typeof(SerializedNodes<TKey, TValue>));
+        var nodes = (SerializedNodes<TKey, TValue>)serializer.Deserialize(reader)!;
 
-        reader.ReadEndElement();
+        // Ajouter les valeurs à la collection
+        nodes?.Nodes.ForEach(x => Add(x.Key, x.Value));
 
-        foreach (var item in items) Add(item.Key, item.Value);
-
-        if (count != _count) throw new InvalidOperationException("XML count is different from the actual count");
+        // Valider la correspondance du count
+        if (nodes?.Count != Count)
+            throw new InvalidOperationException("Error while reading the RB tree from XML");
     }
 
     /// <inheritdoc/>
     public void WriteXml(XmlWriter writer)
     {
-        writer.WriteAttributeString("Count", _count.ToString());
-        foreach (var item in this)
-        {
-            writer.WriteStartElement("Item");
-            var keySerializer = new XmlSerializer(typeof(TKey));
-            var valueSerializer = new XmlSerializer(typeof(TValue));
-            keySerializer.Serialize(writer, item.Key);
-            valueSerializer.Serialize(writer, item.Value);
-            writer.WriteEndElement();
-        }
+        var nodes = new List<SerializedNode<TKey, TValue>>(this.Count);
+        nodes.AddRange(this.Select(element => new SerializedNode<TKey, TValue>(element.Key, element.Value)));
+        var xmlNodes = new SerializedNodes<TKey, TValue>(nodes);
+        new XmlSerializer(typeof(SerializedNodes<TKey, TValue>)).Serialize(writer, xmlNodes);
     }
 
     /// <inheritdoc/>
