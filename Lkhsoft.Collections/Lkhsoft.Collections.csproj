@@ -4,7 +4,7 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>1.0.0-alpha</Version>
+        <Version>1.0.1-alpha</Version>
         <Title>Lkhsoft.Collections</Title>
         <Authors>Maxime Loukhal</Authors>
         <Description>A set of useful collections such as graphs, binary search trees (AVL, Red Black), B-Tree, Trie and others</Description>
@@ -21,6 +21,7 @@
         <AssemblyVersion>1.0.0</AssemblyVersion>
         <FileVersion>1.0.0</FileVersion>
         <RepositoryType>git</RepositoryType>
+        <PackageReleaseNotes>XML and JSON serialization now supported</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
