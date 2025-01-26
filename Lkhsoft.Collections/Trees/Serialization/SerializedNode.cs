@@ -1,4 +1,8 @@
-﻿using System.Xml.Serialization;
+﻿#region
+
+using System.Xml.Serialization;
+
+#endregion
 
 namespace Lkhsoft.Collections.Trees.Serialization;
 
@@ -13,9 +17,8 @@ public class SerializedNode<T>
     /// </summary>
     public SerializedNode()
     {
-        
     }
-    
+
     /// <summary>
     /// Base constructor
     /// </summary>
@@ -35,16 +38,15 @@ public class SerializedNode<T>
 /// Node of a key-value tree for serialization purposes only
 /// </summary>
 [XmlRoot("Node")]
-public class SerializedNode<TKey, T> :  SerializedNode<T>
+public class SerializedNode<TKey, T> : SerializedNode<T>
 {
     /// <summary>
     /// Default constructor
     /// </summary>
     public SerializedNode()
     {
-        
     }
-    
+
     /// <summary>
     /// Base constructor
     /// </summary>
@@ -52,7 +54,7 @@ public class SerializedNode<TKey, T> :  SerializedNode<T>
     {
         Key = key;
     }
-    
+
     /// <summary>
     /// Key of the node
     /// </summary>
@@ -68,18 +70,17 @@ public class SerializedNodes<T>
     /// </summary>
     public SerializedNodes()
     {
-        
     }
-    
+
     /// <summary>
     /// Base constructor
     /// </summary>
     public SerializedNodes(IEnumerable<SerializedNode<T>> nodes)
     {
         Nodes = nodes.ToList();
-        Count = (uint)Nodes.Count;
+        Count = (uint) Nodes.Count;
     }
-    
+
     /// <summary>
     /// Number of nodes
     /// </summary>
@@ -101,9 +102,8 @@ public class SerializedNodes<TKey, TValue>
     /// </summary>
     public SerializedNodes()
     {
-        
     }
-    
+
     /// <summary>
     /// Number of nodes
     /// </summary>
@@ -116,7 +116,7 @@ public class SerializedNodes<TKey, TValue>
     public SerializedNodes(IEnumerable<SerializedNode<TKey, TValue>> nodes)
     {
         Nodes = nodes.ToList();
-        Count = (uint)Nodes.Count;
+        Count = (uint) Nodes.Count;
     }
 
     /// <summary>

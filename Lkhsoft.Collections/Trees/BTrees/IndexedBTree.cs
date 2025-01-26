@@ -1,22 +1,27 @@
-﻿using System.Collections;
+﻿#region
+
+using System.Collections;
 using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
 
+#endregion
+
 namespace Lkhsoft.Collections.Trees.BTrees;
 
 /// <summary>
-/// BTree implementation
+/// An indexed BTree implementation where all values are unique for a given index
 /// </summary>
-public class BTree<TKey, TValue>(byte containerSize = 3)
-    : IDictionary<TKey, IEnumerable<TValue>>, IXmlSerializable, IAsyncEnumerable<KeyValuePair<TKey, IEnumerable<TValue>>>
+public class IndexedBTree<TKey, TValue>(byte containerSize = 3)
+    : IDictionary<TKey, IEnumerable<TValue>>, IXmlSerializable,
+        IAsyncEnumerable<KeyValuePair<TKey, IEnumerable<TValue>>>
     where TKey : IComparable<TKey>
     where TValue : IComparable<TValue>
 {
     /// <summary>
-    /// Btree node
+    /// Indexed B-tree node
     /// </summary>
-    private class Node(TKey key, bool isLeaf)
+    private class IndexedBTreeNode(TKey key, bool isLeaf)
     {
         /// <summary>
         /// Key of the node
@@ -31,7 +36,7 @@ public class BTree<TKey, TValue>(byte containerSize = 3)
         /// <summary>
         /// Children of the node
         /// </summary>
-        public List<Node> Children { get; set; } = [];
+        public List<IndexedBTreeNode> Children { get; set; } = [];
 
         /// <summary>
         /// Is the node a leaf ?
@@ -41,13 +46,13 @@ public class BTree<TKey, TValue>(byte containerSize = 3)
         /// <summary>
         /// Parent of the node
         /// </summary>
-        public Node? Parent { get; set; }
+        public IndexedBTreeNode? Parent { get; set; }
     }
 
     /// <summary>
     /// Tree root
     /// </summary>
-    private Node? _root;
+    private IndexedBTreeNode? _root;
 
     /// <summary>
     /// Number of elements in the tree
@@ -56,7 +61,7 @@ public class BTree<TKey, TValue>(byte containerSize = 3)
 
     ///<inheritdoc/>
     public int Count => _count;
-    
+
     /// <summary>
     /// Number of nodes in the tree
     /// </summary>
@@ -64,13 +69,13 @@ public class BTree<TKey, TValue>(byte containerSize = 3)
 
     ///<inheritdoc/>
     public bool IsReadOnly => false;
-    
+
     ///<inheritdoc/>
     public ICollection<TKey> Keys => this.Select(kvp => kvp.Key).Distinct().ToList();
-    
+
     ///<inheritdoc/>
     public ICollection<IEnumerable<TValue>> Values => this.Select(kvp => kvp.Value).ToList();
-    
+
     /// <summary>
     /// Dictionary to track unique values for each index
     /// </summary>
@@ -118,19 +123,13 @@ public class BTree<TKey, TValue>(byte containerSize = 3)
     /// <summary>
     /// Recursively gets the values for a given key
     /// </summary>
-    private static void GetValuesHelper(Node? node, TKey key, List<TValue> values)
+    private static void GetValuesHelper(IndexedBTreeNode? node, TKey key, List<TValue> values)
     {
         if (node is null) return;
 
-        if (key.CompareTo(node.Key) == 0)
-        {
-            values.AddRange(node.Values);
-        }
+        if (key.CompareTo(node.Key) == 0) values.AddRange(node.Values);
 
-        foreach (var child in node.Children)
-        {
-            GetValuesHelper(child, key, values);
-        }
+        foreach (var child in node.Children) GetValuesHelper(child, key, values);
     }
 
     /// <summary>
@@ -145,28 +144,26 @@ public class BTree<TKey, TValue>(byte containerSize = 3)
         }
 
         if (!uniqueValues.Add(value))
-        {
             throw new InvalidOperationException("Duplicated values are not allowed for a given index");
-        }
 
         if (_root is null)
         {
-            _root = new Node(key, true);
+            _root = new IndexedBTreeNode(key, true);
             if (!_root.Values.Add(value))
-            {
                 throw new InvalidOperationException("Duplicated values are not allowed for a given index");
-            };
+            ;
         }
         else
         {
             if (_root.Values.Count == containerSize)
             {
-                var newRoot = new Node(key, false);
+                var newRoot = new IndexedBTreeNode(key, false);
                 newRoot.Children.Add(_root);
                 _root.Parent = newRoot;
                 SplitChild(newRoot, 0);
                 _root = newRoot;
             }
+
             InsertNonFull(_root, key, value);
         }
 
@@ -179,7 +176,7 @@ public class BTree<TKey, TValue>(byte containerSize = 3)
     private void Insert(TKey key, IEnumerable<TValue> values)
     {
         var comparables = values as TValue[] ?? values.ToArray();
-        
+
         foreach (var value in comparables)
         {
             Insert(key, value);
@@ -190,120 +187,104 @@ public class BTree<TKey, TValue>(byte containerSize = 3)
     /// <summary>
     /// Inserts a key-value pair into a non-full node
     /// </summary>
-  private void InsertNonFull(Node x, TKey key, TValue value)
-{
-    // Recherche de l'enfant approprié
-    if (x.IsLeaf)
+    private void InsertNonFull(IndexedBTreeNode x, TKey key, TValue value)
     {
-        // Cas 1 : Le nœud est une feuille
-        if (x.Key.CompareTo(key) == 0)
+        // Recherche de l'enfant approprié
+        if (x.IsLeaf)
         {
-            // Si la clé correspond et que la limite de conteneur n'est pas atteinte, on ajoute
-            if (x.Values.Count < containerSize)
+            // Cas 1 : Le nœud est une feuille
+            if (x.Key.CompareTo(key) == 0)
             {
-                if (!x.Values.Add(value))
+                // Si la clé correspond et que la limite de conteneur n'est pas atteinte, on ajoute
+                if (x.Values.Count < containerSize)
                 {
+                    if (!x.Values.Add(value))
+                        throw new InvalidOperationException("Duplicated values are not allowed for a given index");
+                    ;
+                }
+                else
+                {
+                    // Sinon, on redistribue la valeur ou créez un nouveau nœud pour cette clé
+                    RedistributeOrAddNode(x, key, value);
+                }
+            }
+            else
+            {
+                // Cas où la clé n'existe pas dans ce nœud, on ajoute un nouveau nœud
+                var newNode = new IndexedBTreeNode(key, true) {Parent = x};
+                if (!newNode.Values.Add(value))
                     throw new InvalidOperationException("Duplicated values are not allowed for a given index");
-                };
-            }
-            else
-            {
-                // Sinon, on redistribue la valeur ou créez un nouveau nœud pour cette clé
-                RedistributeOrAddNode(x, key, value);
+                ;
+                // On ajoute le nouveau nœud dans les enfants
+                x.Children.Add(newNode);
             }
         }
         else
         {
-            // Cas où la clé n'existe pas dans ce nœud, on ajoute un nouveau nœud
-            var newNode = new Node(key, true) { Parent = x };
-            if (!newNode.Values.Add(value))
-            {
-                throw new InvalidOperationException("Duplicated values are not allowed for a given index");
-            };
-            // On ajoute le nouveau nœud dans les enfants
-            x.Children.Add(newNode); 
-        }
-    }
-    else
-    {
-        // Cas 2 : Le nœud n'est pas une feuille
-        var i = 0;
-        while (i < x.Children.Count && key.CompareTo(x.Children[i].Key) > 0)
-        {
-            i++;
-        }
+            // Cas 2 : Le nœud n'est pas une feuille
+            var i = 0;
+            while (i < x.Children.Count && key.CompareTo(x.Children[i].Key) > 0) i++;
 
-        // On cherche l'enfant approprié et gérez les cas où le nœud est plein
-        if (i < x.Children.Count && x.Children[i].Key.CompareTo(key) == 0)
-        {
-            // Trouvé un enfant avec la même clé
-            if (x.Children[i].Values.Count == containerSize)
+            // On cherche l'enfant approprié et gérez les cas où le nœud est plein
+            if (i < x.Children.Count && x.Children[i].Key.CompareTo(key) == 0)
             {
-                // Redistribuer ou diviser si nécessaire
-                RedistributeOrAddNode(x.Children[i], key, value);
+                // Trouvé un enfant avec la même clé
+                if (x.Children[i].Values.Count == containerSize)
+                    // Redistribuer ou diviser si nécessaire
+                    RedistributeOrAddNode(x.Children[i], key, value);
+                else
+                    InsertNonFull(x.Children[i], key, value);
             }
             else
             {
-                InsertNonFull(x.Children[i], key, value);
+                // Aucun nœud approprié, insérez un nouveau nœud pour cette clé
+                var newChild = new IndexedBTreeNode(key, true) {Parent = x};
+                if (!newChild.Values.Add(value))
+                    throw new InvalidOperationException("Duplicated values are not allowed for a given index");
+                ;
+                x.Children.Insert(i, newChild); // Insérez au bon emplacement
             }
         }
-        else
-        {
-            // Aucun nœud approprié, insérez un nouveau nœud pour cette clé
-            var newChild = new Node(key, true) { Parent = x };
-            if (!newChild.Values.Add(value))
-            {
-                throw new InvalidOperationException("Duplicated values are not allowed for a given index");
-            };
-            x.Children.Insert(i, newChild); // Insérez au bon emplacement
-        }
     }
-}
 
     /// <summary>
     /// Redistributes values or add a node
     /// </summary>
-private void RedistributeOrAddNode(Node x, TKey key, TValue value)
-{
-    if (x.Parent == null) return;
-    foreach (var child in x.Parent.Children)
+    private void RedistributeOrAddNode(IndexedBTreeNode x, TKey key, TValue value)
     {
-        if (child.Key.CompareTo(key) != 0 || child.Values.Count >= containerSize) continue;
-        if(!child.Values.Add(value))
+        if (x.Parent == null) return;
+        foreach (var child in x.Parent.Children)
         {
-            throw new InvalidOperationException("Duplicated values are not allowed for a given index");
+            if (child.Key.CompareTo(key) != 0 || child.Values.Count >= containerSize) continue;
+            if (!child.Values.Add(value))
+                throw new InvalidOperationException("Duplicated values are not allowed for a given index");
+            return;
         }
-        return;
-    }
 
-    // Si aucune redistribution possible, créez un nouveau nœud
-    var newNode = new Node(key, x.IsLeaf) {Parent = x.Parent};
-    if (!newNode.Values.Add(value))
-    {
-        throw new InvalidOperationException("Duplicated values are not allowed for a given index");
-    }
+        // Si aucune redistribution possible, créez un nouveau nœud
+        var newNode = new IndexedBTreeNode(key, x.IsLeaf) {Parent = x.Parent};
+        if (!newNode.Values.Add(value))
+            throw new InvalidOperationException("Duplicated values are not allowed for a given index");
 
-    // Insérez le nouveau nœud dans la liste des enfants de manière ordonnée
-    var index = x.Parent.Children.IndexOf(x) + 1;
-    x.Parent.Children.Insert(index, newNode);
-}
+        // Insérez le nouveau nœud dans la liste des enfants de manière ordonnée
+        var index = x.Parent.Children.IndexOf(x) + 1;
+        x.Parent.Children.Insert(index, newNode);
+    }
 
     /// <summary>
     /// Splits a child node
     /// </summary>
-    private void SplitChild(Node? x, int i)
+    private void SplitChild(IndexedBTreeNode? x, int i)
     {
-        if(x is null || x.Children.Count <= i) return;
+        if (x is null || x.Children.Count <= i) return;
         var y = x.Children[i];
-        var z = new Node(y.Key, y.IsLeaf) { Parent = x };
+        var z = new IndexedBTreeNode(y.Key, y.IsLeaf) {Parent = x};
         x.Children.Insert(i + 1, z);
 
         for (var j = 0; j < containerSize / 2; j++)
         {
-            if(!z.Values.Add(y.Values.Last()))
-            {
+            if (!z.Values.Add(y.Values.Last()))
                 throw new InvalidOperationException("Duplicated values are not allowed for a given index");
-            }
             y.Values.Remove(y.Values.Last());
         }
 
@@ -319,49 +300,22 @@ private void RedistributeOrAddNode(Node x, TKey key, TValue value)
         }
     }
 
-    /// <summary>
-    /// Splits a node
-    /// </summary>
-    private void SplitNode(Node x, TKey key, TValue value)
-    {
-        var newNode = new Node(key, true) { Parent = x.Parent };
-        if (!newNode.Values.Add(value))
-        {
-            throw new InvalidOperationException("Duplicated values are not allowed for a given index");
-        }
-
-        if (x.Parent is not null)
-        {
-            x.Parent.Children.Add(newNode);
-        }
-        else
-        {
-            var newRoot = new Node(key, false);
-            newRoot.Children.Add(x);
-            newRoot.Children.Add(newNode);
-            x.Parent = newRoot;
-            newNode.Parent = newRoot;
-            _root = newRoot;
-        }
-    }
-
     ///<inheritdoc/>
     public bool Remove(TKey key)
     {
         if (!Remove(_root, key)) return false;
         _uniqueValues.Remove(key);
         return true;
-
     }
 
     /// <summary>
     /// Removes a node that contains a deleted key from the tree
     /// </summary>
-    private bool Remove(Node? x, TKey key)
+    private bool Remove(IndexedBTreeNode? x, TKey key)
     {
         if (x is null) return false;
 
-        var nodesToRemove = new List<Node>();
+        var nodesToRemove = new List<IndexedBTreeNode>();
         FindNodesToRemove(x, key, nodesToRemove);
 
         foreach (var node in nodesToRemove)
@@ -371,19 +325,14 @@ private void RedistributeOrAddNode(Node x, TKey key, TValue value)
         }
 
         foreach (var node in nodesToRemove)
-        {
             if (node.IsLeaf)
             {
-                if (node.Parent is not null)
-                {
-                    node.Parent.Children.Remove(node);
-                }
+                if (node.Parent is not null) node.Parent.Children.Remove(node);
             }
             else
             {
                 MergeOrRedistribute(node);
             }
-        }
 
         // Gérer la racine après suppression
         HandleRootAfterRemoval();
@@ -415,59 +364,49 @@ private void RedistributeOrAddNode(Node x, TKey key, TValue value)
     /// <summary>
     /// Finds nodes to remove
     /// </summary>
-    private static void FindNodesToRemove(Node node, TKey key, List<Node> nodesToRemove)
+    private static void FindNodesToRemove(IndexedBTreeNode indexedBTreeNode, TKey key,
+        List<IndexedBTreeNode> nodesToRemove)
     {
-        if (node.Key.CompareTo(key) == 0)
-        {
-            nodesToRemove.Add(node);
-        }
+        if (indexedBTreeNode.Key.CompareTo(key) == 0) nodesToRemove.Add(indexedBTreeNode);
 
-        foreach (var child in node.Children)
-        {
-            FindNodesToRemove(child, key, nodesToRemove);
-        }
+        foreach (var child in indexedBTreeNode.Children) FindNodesToRemove(child, key, nodesToRemove);
     }
 
     /// <summary>
     /// Merges or redistributes nodes
     /// </summary>
-    private void MergeOrRedistribute(Node node)
+    private void MergeOrRedistribute(IndexedBTreeNode indexedBTreeNode)
     {
-        if (node.Parent is null)
-        {
+        if (indexedBTreeNode.Parent is null)
             // Si le nœud est la racine, aucune redistribution n'est nécessaire ici
             return;
-        }
 
-        var index = node.Parent.Children.IndexOf(node);
-        var leftSibling = index > 0 ? node.Parent.Children[index - 1] : null;
-        var rightSibling = index < node.Parent.Children.Count - 1 ? node.Parent.Children[index + 1] : null;
+        var index = indexedBTreeNode.Parent.Children.IndexOf(indexedBTreeNode);
+        var leftSibling = index > 0 ? indexedBTreeNode.Parent.Children[index - 1] : null;
+        var rightSibling = index < indexedBTreeNode.Parent.Children.Count - 1
+            ? indexedBTreeNode.Parent.Children[index + 1]
+            : null;
 
         if (leftSibling is not null && leftSibling.Children.Count >= containerSize)
         {
-            BorrowFromPrev(node.Parent, index);
+            BorrowFromPrev(indexedBTreeNode.Parent, index);
         }
         else if (rightSibling is not null && rightSibling.Children.Count >= containerSize)
         {
-            BorrowFromNext(node.Parent, index);
+            BorrowFromNext(indexedBTreeNode.Parent, index);
         }
         else
         {
             if (leftSibling is not null)
-            {
-                Merge(node.Parent, index - 1);
-            }
-            else if (rightSibling is not null)
-            {
-                Merge(node.Parent, index);
-            }
+                Merge(indexedBTreeNode.Parent, index - 1);
+            else if (rightSibling is not null) Merge(indexedBTreeNode.Parent, index);
         }
     }
 
     /// <summary>
     /// Borrows a node from the previous sibling
     /// </summary>
-    private static void BorrowFromPrev(Node x, int i)
+    private static void BorrowFromPrev(IndexedBTreeNode x, int i)
     {
         var y = x.Children[i];
         var z = x.Children[i - 1];
@@ -482,7 +421,7 @@ private void RedistributeOrAddNode(Node x, TKey key, TValue value)
     /// <summary>
     /// Borrows a node from the next sibling
     /// </summary>
-    private static void BorrowFromNext(Node x, int i)
+    private static void BorrowFromNext(IndexedBTreeNode x, int i)
     {
         var y = x.Children[i];
         var z = x.Children[i + 1];
@@ -497,7 +436,7 @@ private void RedistributeOrAddNode(Node x, TKey key, TValue value)
     /// <summary>
     /// Merges two nodes
     /// </summary>
-    private static void Merge(Node x, int i)
+    private static void Merge(IndexedBTreeNode x, int i)
     {
         var y = x.Children[i];
         var z = x.Children[i + 1];
@@ -512,7 +451,9 @@ private void RedistributeOrAddNode(Node x, TKey key, TValue value)
     ///<inheritdoc/>
     public IEnumerator<KeyValuePair<TKey, IEnumerable<TValue>>> GetEnumerator()
     {
-        var stack = new Stack<Node>();
+        if (_root is null) yield break;
+
+        var stack = new Stack<IndexedBTreeNode>();
         stack.Push(_root);
 
         while (stack.Count > 0)
@@ -520,10 +461,7 @@ private void RedistributeOrAddNode(Node x, TKey key, TValue value)
             var node = stack.Pop();
             yield return new KeyValuePair<TKey, IEnumerable<TValue>>(node.Key, node.Values);
 
-            foreach (var child in node.Children)
-            {
-                stack.Push(child);
-            }
+            foreach (var child in node.Children) stack.Push(child);
         }
     }
 
@@ -534,9 +472,10 @@ private void RedistributeOrAddNode(Node x, TKey key, TValue value)
     }
 
     ///<inheritdoc/>
-    public async IAsyncEnumerator<KeyValuePair<TKey, IEnumerable<TValue>>> GetAsyncEnumerator(CancellationToken cancellationToken = default)
+    public async IAsyncEnumerator<KeyValuePair<TKey, IEnumerable<TValue>>> GetAsyncEnumerator(
+        CancellationToken cancellationToken = default)
     {
-        var stack = new Stack<Node>();
+        var stack = new Stack<IndexedBTreeNode>();
         if (_root is not null) stack.Push(_root);
 
         while (stack.Count > 0)
@@ -546,10 +485,7 @@ private void RedistributeOrAddNode(Node x, TKey key, TValue value)
             await Task.Yield();
             yield return new KeyValuePair<TKey, IEnumerable<TValue>>(node.Key, node.Values);
 
-            foreach (var child in node.Children)
-            {
-                stack.Push(child);
-            }
+            foreach (var child in node.Children) stack.Push(child);
         }
     }
 
@@ -593,7 +529,7 @@ private void RedistributeOrAddNode(Node x, TKey key, TValue value)
     /// <returns>The index of the given value</returns>
     public int Search(TKey key, TValue value, out TValue? foundValue)
     {
-        foundValue = default(TValue);
+        foundValue = default;
         if (!TryGetValue(key, out var keyValues)) return -1;
         var comparables = keyValues.OrderBy(x => x).ToArray();
         var index = Array.BinarySearch(comparables, value);
@@ -613,11 +549,8 @@ private void RedistributeOrAddNode(Node x, TKey key, TValue value)
         if (!TryGetValue(key, out var keyValues) || enumerable.Length == 0) return null;
         var result = new List<int>(enumerable.Length);
         var comparables = keyValues.OrderBy(x => x).ToArray();
-        
-        foreach (var value in enumerable)
-        {
-            result.Add(Array.BinarySearch(comparables, value));
-        }
+
+        foreach (var value in enumerable) result.Add(Array.BinarySearch(comparables, value));
 
         return result;
     }
@@ -636,17 +569,14 @@ private void RedistributeOrAddNode(Node x, TKey key, TValue value)
         if (!TryGetValue(key, out var keyValues) || enumerable.Length == 0) return null;
         var result = new List<int>(enumerable.Length);
         var comparables = keyValues.OrderBy(x => x).ToArray();
-       
-        foreach (var value in enumerable)
-        {
-            result.Add(Array.BinarySearch(comparables, value));
-        }
+
+        foreach (var value in enumerable) result.Add(Array.BinarySearch(comparables, value));
 
         foundValue = result.Select(i => comparables[i]);
 
         return result;
     }
-    
+
     ///<inheritdoc/>
     public bool TryGetValue(TKey key, out IEnumerable<TValue> value)
     {
@@ -657,6 +587,7 @@ private void RedistributeOrAddNode(Node x, TKey key, TValue value)
             value = comparables;
             return true;
         }
+
         value = new List<TValue>();
         return false;
     }
@@ -678,16 +609,14 @@ private void RedistributeOrAddNode(Node x, TKey key, TValue value)
     ///<inheritdoc/>
     public bool Contains(KeyValuePair<TKey, IEnumerable<TValue>> item)
     {
-        return TryGetValue(item.Key, out var value) && EqualityComparer<IEnumerable<TValue>>.Default.Equals(value, item.Value);
+        return TryGetValue(item.Key, out var value) &&
+               EqualityComparer<IEnumerable<TValue>>.Default.Equals(value, item.Value);
     }
 
     ///<inheritdoc/>
     public void CopyTo(KeyValuePair<TKey, IEnumerable<TValue>>[] array, int arrayIndex)
     {
-        foreach (var kvp in this)
-        {
-            array[arrayIndex++] = kvp;
-        }
+        foreach (var kvp in this) array[arrayIndex++] = kvp;
     }
 
     ///<inheritdoc/>
