@@ -1,4 +1,4 @@
-name: Server's plugins NuGet package publish
+name: Lkhsoft.Collections NuGet package publish
 
 on:
   push:
