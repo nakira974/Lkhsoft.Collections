@@ -2,7 +2,7 @@ name: Lkhsoft.Collections NuGet package publish
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "dev", "trunk" ]
   pull_request:
     branches: [ "trunk" ]
 
