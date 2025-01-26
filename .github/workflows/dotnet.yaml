@@ -25,7 +25,7 @@ jobs:
 
       - name: Package NuGet
         run: |
-          dotnet pack Lkhsoft.Collections\Lkhsoft.Collections.csproj --configuration ${{ github.ref == 'refs/heads/dev' && 'Debug' || 'Release' }} -o:package ${{ github.ref == 'refs/heads/dev' && '-p:VersionSuffix=alpha' || '' }}
+          dotnet pack Lkhsoft.Collections\Lkhsoft.Collections.csproj --configuration ${{ github.ref == 'refs/heads/dev' && 'Debug' || 'Release' }} -o:package ${{ github.ref == 'refs/heads/dev' && '--version-suffix alpha' || '' }}
 
       - name: Push generated package to GitHub registry
         run: |
