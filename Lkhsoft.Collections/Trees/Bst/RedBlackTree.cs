@@ -1,13 +1,8 @@
 ﻿#region
 
-using System.Collections;
-using System.Runtime.Serialization;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Xml;
-using System.Xml.Schema;
-using System.Xml.Serialization;
-using Lkhsoft.Collections.Trees.Serialization;
 
 #endregion
 
@@ -75,12 +70,15 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
     public override void Add(T item)
     {
         if (Root is null)
+        {
             Root = new RedBlackTreeNode(item) {Color = NodeColor.Black};
+        }
         else
         {
-            if(Contains(item)) throw new InvalidOperationException("Item already exists");
-            Add((RedBlackTreeNode?)Root, item);
+            if (Contains(item)) throw new InvalidOperationException("Item already exists");
+            Add((RedBlackTreeNode?) Root, item);
         }
+
         _count++;
     }
 
@@ -103,7 +101,7 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
                     {
                         Parent = node
                     };
-                    FixTree((RedBlackTreeNode?)node.Left);
+                    FixTree((RedBlackTreeNode?) node.Left);
                 }
                 else
                 {
@@ -112,7 +110,7 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
             }
             else
             {
-                Add((RedBlackTreeNode?)node.Left, item);
+                Add((RedBlackTreeNode?) node.Left, item);
             }
         }
         else
@@ -125,7 +123,7 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
                     {
                         Parent = node
                     };
-                    FixTree((RedBlackTreeNode?)node.Right);
+                    FixTree((RedBlackTreeNode?) node.Right);
                 }
                 else
                 {
@@ -134,7 +132,7 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
             }
             else
             {
-                Add((RedBlackTreeNode?)node.Right, item);
+                Add((RedBlackTreeNode?) node.Right, item);
             }
         }
     }
@@ -148,7 +146,7 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
         while (node?.Parent is not null && node != Root && node.Parent.Color.Equals(NodeColor.Red))
             if (node.Parent == node.Parent.Parent?.Left)
             {
-                var uncle = (RedBlackTreeNode?)node.Parent.Parent.Right;
+                var uncle = (RedBlackTreeNode?) node.Parent.Parent.Right;
                 if (uncle is not null && uncle.Color.Equals(NodeColor.Red))
                 {
                     node.Parent.Color = NodeColor.Black;
@@ -185,7 +183,7 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
             }
             else
             {
-                var uncle = (RedBlackTreeNode?)node.Parent.Parent?.Left;
+                var uncle = (RedBlackTreeNode?) node.Parent.Parent?.Left;
                 if (uncle is not null && uncle.Color.Equals(NodeColor.Red))
                 {
                     node.Parent.Color = NodeColor.Black;
@@ -228,8 +226,8 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
                 }
             }
 
-        if (Root is not null) 
-            ((RedBlackTreeNode)Root).Color = NodeColor.Black;
+        if (Root is not null)
+            ((RedBlackTreeNode) Root).Color = NodeColor.Black;
         else throw new InvalidOperationException("Root is null");
     }
 
@@ -243,9 +241,9 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
         if (node is not null && temp is not null)
         {
             node.Right = temp.Left;
-            if (temp.Left is not null) ((RedBlackTreeNode)temp.Left).Parent = node;
+            if (temp.Left is not null) ((RedBlackTreeNode) temp.Left).Parent = node;
 
-            ((RedBlackTreeNode)temp).Parent = node.Parent;
+            ((RedBlackTreeNode) temp).Parent = node.Parent;
             if (node.Parent is null)
                 Root = temp;
             else if (node == node.Parent.Left)
@@ -254,7 +252,7 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
                 node.Parent.Right = temp;
 
             temp.Left = node;
-            node.Parent = (RedBlackTreeNode?)temp;
+            node.Parent = (RedBlackTreeNode?) temp;
         }
         else
         {
@@ -268,11 +266,11 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
     /// <param name="node">Node from where to start the rotation</param>
     private void RotateRight(RedBlackTreeNode? node)
     {
-        var temp = (RedBlackTreeNode?)node?.Left;
+        var temp = (RedBlackTreeNode?) node?.Left;
         if (node is not null && temp is not null)
         {
             node.Left = temp.Right;
-            if (temp.Right is not null) ((RedBlackTreeNode)temp.Right).Parent = node;
+            if (temp.Right is not null) ((RedBlackTreeNode) temp.Right).Parent = node;
 
             temp.Parent = node.Parent;
             if (node.Parent is null)
@@ -303,7 +301,7 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
 
         if (node.Left is not null && node.Right is not null)
         {
-            var temp = GetMinimum((RedBlackTreeNode?)node.Right);
+            var temp = GetMinimum((RedBlackTreeNode?) node.Right);
             if (temp is null) throw new InvalidOperationException("Temp is null");
             node.Value = temp.Value;
             node = temp;
@@ -312,7 +310,7 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
         var child = node.Right ?? node.Left;
         if (child is not null)
         {
-            ((RedBlackTreeNode)child).Parent = node.Parent;
+            ((RedBlackTreeNode) child).Parent = node.Parent;
             if (node.Parent is null)
                 Root = child;
             else if (node == node.Parent.Left)
@@ -357,7 +355,7 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
                     current = current.Right;
                     break;
                 default:
-                    return (RedBlackTreeNode?)current;
+                    return (RedBlackTreeNode?) current;
             }
         }
 
@@ -371,10 +369,10 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
     /// <returns>The minimum node of the current branch</returns>
     private RedBlackTreeNode? GetMinimum(RedBlackTreeNode? node)
     {
-        while (node?.Left is not null) node = (RedBlackTreeNode?)node.Left;
+        while (node?.Left is not null) node = (RedBlackTreeNode?) node.Left;
         return node;
     }
-    
+
     /// <inheritdoc/>
     public override bool Contains(T item)
     {
@@ -394,7 +392,7 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
     /// <inheritdoc/>
     public override IEnumerator<T> GetEnumerator()
     {
-        return InOrderTraversal((RedBlackTreeNode?)Root).GetEnumerator();
+        return InOrderTraversal((RedBlackTreeNode?) Root).GetEnumerator();
     }
 
     /// <summary>
@@ -405,27 +403,28 @@ public class RedBlackTree<T> : BinarySearchTree<T> where T : IComparable<T>
     private IEnumerable<T> InOrderTraversal(RedBlackTreeNode? node)
     {
         if (node is null) yield break;
-        foreach (var item in InOrderTraversal((RedBlackTreeNode?)node.Right)) yield return item;
+        foreach (var item in InOrderTraversal((RedBlackTreeNode?) node.Right)) yield return item;
         yield return node.Value;
-        foreach (var item in InOrderTraversal((RedBlackTreeNode?)node.Left)) yield return item;
+        foreach (var item in InOrderTraversal((RedBlackTreeNode?) node.Left)) yield return item;
     }
 
     /// <inheritdoc/>
     public override IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default)
     {
-        return InOrderTraversalAsync((RedBlackTreeNode?)Root, cancellationToken).GetAsyncEnumerator(cancellationToken);
+        return InOrderTraversalAsync((RedBlackTreeNode?) Root, cancellationToken).GetAsyncEnumerator(cancellationToken);
     }
 
     /// <summary>
     /// Asynchronously traverses the tree in-order
     /// </summary>
-    private static async IAsyncEnumerable<T> InOrderTraversalAsync(RedBlackTreeNode? node, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    private static async IAsyncEnumerable<T> InOrderTraversalAsync(RedBlackTreeNode? node,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (node is null) yield break;
-        await foreach (var item in InOrderTraversalAsync((RedBlackTreeNode?)node.Right, cancellationToken))
+        await foreach (var item in InOrderTraversalAsync((RedBlackTreeNode?) node.Right, cancellationToken))
             yield return item;
         yield return node.Value;
-        await foreach (var item in InOrderTraversalAsync((RedBlackTreeNode?)node.Left, cancellationToken))
+        await foreach (var item in InOrderTraversalAsync((RedBlackTreeNode?) node.Left, cancellationToken))
             yield return item;
     }
 }
@@ -439,7 +438,7 @@ public class RedBlackTreeJsonConverter<T> : JsonConverter<RedBlackTree<T>> where
     /// <inheritdoc/>
     public override RedBlackTree<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-          var tree = new RedBlackTree<T>();
+        var tree = new RedBlackTree<T>();
         var count = 0;
 
         if (reader.TokenType != JsonTokenType.StartObject) throw new JsonException("Expected start of object.");
@@ -556,13 +555,14 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     /// <summary>
     /// Node class for Red-Black Tree
     /// </summary>
-    private class RedBlackTreeNode(TKey key, TValue value, NodeColor nodeColor = NodeColor.Red) : BinarySearchTreeNode(key, value)
+    private class RedBlackTreeNode(TKey key, TValue value, NodeColor nodeColor = NodeColor.Red)
+        : BinarySearchTreeNode(key, value)
     {
         /// <summary>
         /// Color of the node
         /// </summary>
         public NodeColor Color { get; set; } = nodeColor;
-        
+
         /// <summary>
         /// Node's children and parent
         /// </summary>
@@ -620,15 +620,18 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     public override void Add(TKey key, TValue value)
     {
         if (Root is null)
+        {
             Root = new RedBlackTreeNode(key, value) {Color = NodeColor.Black};
+        }
         else
         {
-            if(ContainsKey(key)) throw new InvalidOperationException("Key already exists");
-            Add((RedBlackTreeNode?)Root, key, value);
+            if (ContainsKey(key)) throw new InvalidOperationException("Key already exists");
+            Add((RedBlackTreeNode?) Root, key, value);
         }
+
         _count++;
     }
-    
+
     /// <inheritdoc/>
     public override bool Remove(KeyValuePair<TKey, TValue> item)
     {
@@ -652,7 +655,7 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
                     {
                         Parent = node
                     };
-                    FixTree((RedBlackTreeNode?)node.Left);
+                    FixTree((RedBlackTreeNode?) node.Left);
                 }
                 else
                 {
@@ -661,7 +664,7 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
             }
             else
             {
-                Add((RedBlackTreeNode?)node.Left, key, value);
+                Add((RedBlackTreeNode?) node.Left, key, value);
             }
         }
         else
@@ -674,7 +677,7 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
                     {
                         Parent = node
                     };
-                    FixTree((RedBlackTreeNode?)node.Right);
+                    FixTree((RedBlackTreeNode?) node.Right);
                 }
                 else
                 {
@@ -683,7 +686,7 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
             }
             else
             {
-                Add((RedBlackTreeNode?)node.Right, key, value);
+                Add((RedBlackTreeNode?) node.Right, key, value);
             }
         }
     }
@@ -697,10 +700,10 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
             if (node.Parent == node.Parent.Parent?.Left)
             {
                 var uncle = node.Parent.Parent.Right;
-                if (uncle is not null && ((RedBlackTreeNode)uncle).Color.Equals(NodeColor.Red))
+                if (uncle is not null && ((RedBlackTreeNode) uncle).Color.Equals(NodeColor.Red))
                 {
                     node.Parent.Color = NodeColor.Black;
-                    ((RedBlackTreeNode)uncle).Color = NodeColor.Black;
+                    ((RedBlackTreeNode) uncle).Color = NodeColor.Black;
                     node.Parent.Parent.Color = NodeColor.Red;
                     node = node.Parent.Parent;
                 }
@@ -734,10 +737,10 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
             else
             {
                 var uncle = node.Parent.Parent?.Left;
-                if (uncle is not null && ((RedBlackTreeNode)uncle).Color.Equals(NodeColor.Red))
+                if (uncle is not null && ((RedBlackTreeNode) uncle).Color.Equals(NodeColor.Red))
                 {
                     node.Parent.Color = NodeColor.Black;
-                    ((RedBlackTreeNode)uncle).Color = NodeColor.Black;
+                    ((RedBlackTreeNode) uncle).Color = NodeColor.Black;
                     if (node.Parent.Parent is not null)
                     {
                         node.Parent.Parent.Color = NodeColor.Red;
@@ -776,7 +779,7 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
                 }
             }
 
-        if (Root is not null) ((RedBlackTreeNode)Root).Color = NodeColor.Black;
+        if (Root is not null) ((RedBlackTreeNode) Root).Color = NodeColor.Black;
         else throw new InvalidOperationException("Root is null");
     }
 
@@ -790,9 +793,9 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
         if (node is not null && temp is not null)
         {
             node.Right = temp.Left;
-            if (temp.Left is not null) ((RedBlackTreeNode)temp.Left).Parent = node;
+            if (temp.Left is not null) ((RedBlackTreeNode) temp.Left).Parent = node;
 
-            ((RedBlackTreeNode)temp).Parent = node.Parent;
+            ((RedBlackTreeNode) temp).Parent = node.Parent;
             if (node.Parent is null)
                 Root = temp;
             else if (node == node.Parent.Left)
@@ -801,7 +804,7 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
                 node.Parent.Right = temp;
 
             temp.Left = node;
-            node.Parent = (RedBlackTreeNode?)temp;
+            node.Parent = (RedBlackTreeNode?) temp;
         }
         else
         {
@@ -819,9 +822,9 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
         if (node is not null && temp is not null)
         {
             node.Left = temp.Right;
-            if (temp.Right is not null) ((RedBlackTreeNode)temp.Right).Parent = node;
+            if (temp.Right is not null) ((RedBlackTreeNode) temp.Right).Parent = node;
 
-            ((RedBlackTreeNode)temp).Parent = node.Parent;
+            ((RedBlackTreeNode) temp).Parent = node.Parent;
             if (node.Parent is null)
                 Root = temp;
             else if (node == node.Parent.Right)
@@ -830,7 +833,7 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
                 node.Parent.Left = temp;
 
             temp.Right = node;
-            node.Parent = (RedBlackTreeNode?)temp;
+            node.Parent = (RedBlackTreeNode?) temp;
         }
         else
         {
@@ -846,7 +849,7 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
 
         if (node.Left is not null && node.Right is not null)
         {
-            var temp = GetMinimum((RedBlackTreeNode?)node.Right);
+            var temp = GetMinimum((RedBlackTreeNode?) node.Right);
             if (temp is null) throw new InvalidOperationException("Temp is null");
             node.Key = temp.Key;
             node.Value = temp.Value;
@@ -856,7 +859,7 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
         var child = node.Right ?? node.Left;
         if (child is not null)
         {
-            ((RedBlackTreeNode)child).Parent = node.Parent;
+            ((RedBlackTreeNode) child).Parent = node.Parent;
             if (node.Parent is null)
                 Root = child;
             else if (node == node.Parent.Left)
@@ -896,7 +899,7 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
             else if (comparison > 0)
                 current = current.Right;
             else
-                return (RedBlackTreeNode?)current;
+                return (RedBlackTreeNode?) current;
         }
 
         return null;
@@ -907,7 +910,7 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     /// </summary>
     private RedBlackTreeNode? GetMinimum(RedBlackTreeNode? node)
     {
-        while (node?.Left is not null) node = (RedBlackTreeNode?)node.Left;
+        while (node?.Left is not null) node = (RedBlackTreeNode?) node.Left;
         return node;
     }
 
@@ -956,7 +959,7 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     /// <inheritdoc/>
     public override IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
     {
-        return InOrderTraversal((RedBlackTreeNode?)Root).GetEnumerator();
+        return InOrderTraversal((RedBlackTreeNode?) Root).GetEnumerator();
     }
 
     /// <summary>
@@ -965,27 +968,29 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     private IEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversal(RedBlackTreeNode? node)
     {
         if (node is null) yield break;
-        foreach (var item in InOrderTraversal((RedBlackTreeNode?)node.Right)) yield return item;
+        foreach (var item in InOrderTraversal((RedBlackTreeNode?) node.Right)) yield return item;
         yield return new KeyValuePair<TKey, TValue>(node.Key, node.Value);
-        foreach (var item in InOrderTraversal((RedBlackTreeNode?)node.Left)) yield return item;
+        foreach (var item in InOrderTraversal((RedBlackTreeNode?) node.Left)) yield return item;
     }
-    
+
     /// <inheritdoc/>
-    public override IAsyncEnumerator<KeyValuePair<TKey, TValue>> GetAsyncEnumerator(CancellationToken cancellationToken = default)
+    public override IAsyncEnumerator<KeyValuePair<TKey, TValue>> GetAsyncEnumerator(
+        CancellationToken cancellationToken = default)
     {
-        return InOrderTraversalAsync((RedBlackTreeNode?)Root, cancellationToken).GetAsyncEnumerator(cancellationToken);
+        return InOrderTraversalAsync((RedBlackTreeNode?) Root, cancellationToken).GetAsyncEnumerator(cancellationToken);
     }
 
     /// <summary>
     /// Asynchronously traverses the tree in-order
     /// </summary>
-    private static async IAsyncEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversalAsync(RedBlackTreeNode? node, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    private static async IAsyncEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversalAsync(RedBlackTreeNode? node,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (node is null) yield break;
-        await foreach (var item in InOrderTraversalAsync((RedBlackTreeNode?)node.Right, cancellationToken))
+        await foreach (var item in InOrderTraversalAsync((RedBlackTreeNode?) node.Right, cancellationToken))
             yield return item;
         yield return new KeyValuePair<TKey, TValue>(node.Key, node.Value);
-        await foreach (var item in InOrderTraversalAsync((RedBlackTreeNode?)node.Left, cancellationToken))
+        await foreach (var item in InOrderTraversalAsync((RedBlackTreeNode?) node.Left, cancellationToken))
             yield return item;
     }
 }

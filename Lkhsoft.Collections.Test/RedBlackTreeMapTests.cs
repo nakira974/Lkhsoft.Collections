@@ -2,7 +2,6 @@
 
 using System.Text.Json;
 using System.Xml;
-using System.Xml.Serialization;
 using Lkhsoft.Collections.Trees.Bst;
 
 #endregion
@@ -148,14 +147,14 @@ public class RedBlackTreeMapTests
             Assert.That(tree, Has.Count.EqualTo(5));
         }
     }
-    
+
     private static readonly KeyValuePair<int, string>[] Expected =
     [
         new(1, "one"),
         new(2, "two"),
         new(3, "three")
     ];
-    
+
     [Test]
     public void GetEnumerator_ShouldWork()
     {
@@ -173,7 +172,7 @@ public class RedBlackTreeMapTests
 
         Assert.That(list, Is.EqualTo(Expected));
     }
-    
+
     [Test]
     public async Task GetAsyncEnumerator_ShouldWork()
     {
@@ -185,11 +184,8 @@ public class RedBlackTreeMapTests
 
         var list = new List<KeyValuePair<int, string>>();
 
-        await foreach (var item in tree)
-        {
-            list.Add(item);
-        }
+        await foreach (var item in tree) list.Add(item);
 
-        Assert.That(list, Is.EqualTo(new List<KeyValuePair<int, string>> { new KeyValuePair<int, string>(1, "one"), new KeyValuePair<int, string>(2, "two") }));
+        Assert.That(list, Is.EqualTo(new List<KeyValuePair<int, string>> {new(1, "one"), new(2, "two")}));
     }
 }

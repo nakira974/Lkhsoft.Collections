@@ -1,6 +1,9 @@
 ﻿#region
+
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
 #endregion
 
 namespace Lkhsoft.Collections.Trees.Bst;
@@ -36,7 +39,7 @@ public class AvlTree<T> : BinarySearchTree<T> where T : IComparable<T>
     /// <param name="item"></param>
     public override void Add(T item)
     {
-        Root = Add((AvlTreeNode?)Root, item);
+        Root = Add((AvlTreeNode?) Root, item);
         _count++;
     }
 
@@ -51,10 +54,10 @@ public class AvlTree<T> : BinarySearchTree<T> where T : IComparable<T>
         switch (comparison)
         {
             case < 0:
-                node.Left = Add((AvlTreeNode?)node.Left, item);
+                node.Left = Add((AvlTreeNode?) node.Left, item);
                 break;
             case > 0:
-                node.Right = Add((AvlTreeNode?)node.Right, item);
+                node.Right = Add((AvlTreeNode?) node.Right, item);
                 break;
             default:
                 throw new InvalidOperationException("Duplicate items are not allowed in an AVL tree.");
@@ -70,7 +73,7 @@ public class AvlTree<T> : BinarySearchTree<T> where T : IComparable<T>
     public override bool Remove(T item)
     {
         if (!Contains(item)) return false;
-        Root = Remove((AvlTreeNode?)Root, item);
+        Root = Remove((AvlTreeNode?) Root, item);
         _count--;
         return true;
     }
@@ -86,21 +89,21 @@ public class AvlTree<T> : BinarySearchTree<T> where T : IComparable<T>
         switch (comparison)
         {
             case < 0:
-                node.Left = Remove((AvlTreeNode?)node.Left, item);
+                node.Left = Remove((AvlTreeNode?) node.Left, item);
                 break;
             case > 0:
-                node.Right = Remove((AvlTreeNode?)node.Right, item);
+                node.Right = Remove((AvlTreeNode?) node.Right, item);
                 break;
             default:
             {
-                if (node.Left is null) return (AvlTreeNode?)node.Right;
-                if (node.Right is null) return (AvlTreeNode?)node.Left;
+                if (node.Left is null) return (AvlTreeNode?) node.Right;
+                if (node.Right is null) return (AvlTreeNode?) node.Left;
 
-                var minLargerNode = GetMinimum((AvlTreeNode)node.Right);
+                var minLargerNode = GetMinimum((AvlTreeNode) node.Right);
                 if (minLargerNode is not null)
                 {
                     node.Value = minLargerNode.Value;
-                    node.Right = Remove((AvlTreeNode?)node.Right, minLargerNode.Value);
+                    node.Right = Remove((AvlTreeNode?) node.Right, minLargerNode.Value);
                 }
                 else
                 {
@@ -120,7 +123,7 @@ public class AvlTree<T> : BinarySearchTree<T> where T : IComparable<T>
     /// </summary>
     public override bool Contains(T item)
     {
-        return FindNode((AvlTreeNode?)Root, item) is not null;
+        return FindNode((AvlTreeNode?) Root, item) is not null;
     }
 
     /// <summary>
@@ -134,10 +137,10 @@ public class AvlTree<T> : BinarySearchTree<T> where T : IComparable<T>
             switch (comparison)
             {
                 case < 0:
-                    node = (AvlTreeNode?)node.Left;
+                    node = (AvlTreeNode?) node.Left;
                     break;
                 case > 0:
-                    node = (AvlTreeNode?)node.Right;
+                    node = (AvlTreeNode?) node.Right;
                     break;
                 default:
                     return node;
@@ -153,7 +156,7 @@ public class AvlTree<T> : BinarySearchTree<T> where T : IComparable<T>
     private AvlTreeNode? GetMinimum(AvlTreeNode avlTreeNode)
     {
         while (avlTreeNode.Left is not null)
-            avlTreeNode = (AvlTreeNode)avlTreeNode.Left;
+            avlTreeNode = (AvlTreeNode) avlTreeNode.Left;
         return avlTreeNode;
     }
 
@@ -162,7 +165,8 @@ public class AvlTree<T> : BinarySearchTree<T> where T : IComparable<T>
     /// </summary>
     private void UpdateHeight(AvlTreeNode avlTreeNode)
     {
-        avlTreeNode.Height = 1 + Math.Max(GetHeight((AvlTreeNode?)avlTreeNode.Left), GetHeight((AvlTreeNode?)avlTreeNode.Right));
+        avlTreeNode.Height = 1 + Math.Max(GetHeight((AvlTreeNode?) avlTreeNode.Left),
+            GetHeight((AvlTreeNode?) avlTreeNode.Right));
     }
 
     /// <summary>
@@ -178,7 +182,7 @@ public class AvlTree<T> : BinarySearchTree<T> where T : IComparable<T>
     /// </summary>
     private int GetBalance(AvlTreeNode avlTreeNode)
     {
-        return GetHeight((AvlTreeNode?)avlTreeNode.Left) - GetHeight((AvlTreeNode?)avlTreeNode.Right);
+        return GetHeight((AvlTreeNode?) avlTreeNode.Left) - GetHeight((AvlTreeNode?) avlTreeNode.Right);
     }
 
     /// <summary>
@@ -192,17 +196,18 @@ public class AvlTree<T> : BinarySearchTree<T> where T : IComparable<T>
         {
             case > 1:
             {
-                if (GetBalance((AvlTreeNode?)avlTreeNode.Left ?? throw new InvalidOperationException("Error while balancing left node")) <
+                if (GetBalance((AvlTreeNode?) avlTreeNode.Left ??
+                               throw new InvalidOperationException("Error while balancing left node")) <
                     0)
-                    avlTreeNode.Left = RotateLeft((AvlTreeNode)avlTreeNode.Left);
+                    avlTreeNode.Left = RotateLeft((AvlTreeNode) avlTreeNode.Left);
                 return RotateRight(avlTreeNode);
             }
             case < -1:
             {
-                if (GetBalance((AvlTreeNode)avlTreeNode.Right!) > 0)
-                    avlTreeNode.Right = RotateRight((AvlTreeNode?)avlTreeNode.Right ??
-                                                throw new InvalidOperationException(
-                                                    "Error while balancing right node"));
+                if (GetBalance((AvlTreeNode) avlTreeNode.Right!) > 0)
+                    avlTreeNode.Right = RotateRight((AvlTreeNode?) avlTreeNode.Right ??
+                                                    throw new InvalidOperationException(
+                                                        "Error while balancing right node"));
                 return RotateLeft(avlTreeNode);
             }
             default:
@@ -220,8 +225,8 @@ public class AvlTree<T> : BinarySearchTree<T> where T : IComparable<T>
         avlTreeNode.Right = newRoot.Left;
         newRoot.Left = avlTreeNode;
         UpdateHeight(avlTreeNode);
-        UpdateHeight((AvlTreeNode)newRoot);
-        return (AvlTreeNode)newRoot;
+        UpdateHeight((AvlTreeNode) newRoot);
+        return (AvlTreeNode) newRoot;
     }
 
     /// <summary>
@@ -234,8 +239,8 @@ public class AvlTree<T> : BinarySearchTree<T> where T : IComparable<T>
         avlTreeNode.Left = newRoot.Right;
         newRoot.Right = avlTreeNode;
         UpdateHeight(avlTreeNode);
-        UpdateHeight((AvlTreeNode)newRoot);
-        return (AvlTreeNode)newRoot;
+        UpdateHeight((AvlTreeNode) newRoot);
+        return (AvlTreeNode) newRoot;
     }
 
     /// <summary>
@@ -257,7 +262,7 @@ public class AvlTree<T> : BinarySearchTree<T> where T : IComparable<T>
     /// </summary>
     public override IEnumerator<T> GetEnumerator()
     {
-        return InOrderTraversal((AvlTreeNode?)Root).GetEnumerator();
+        return InOrderTraversal((AvlTreeNode?) Root).GetEnumerator();
     }
 
     /// <summary>
@@ -266,29 +271,30 @@ public class AvlTree<T> : BinarySearchTree<T> where T : IComparable<T>
     private IEnumerable<T> InOrderTraversal(AvlTreeNode? node)
     {
         if (node is null) yield break;
-        foreach (var item in InOrderTraversal((AvlTreeNode?)node.Left))
+        foreach (var item in InOrderTraversal((AvlTreeNode?) node.Left))
             yield return item;
         yield return node.Value;
-        foreach (var item in InOrderTraversal((AvlTreeNode?)node.Right))
+        foreach (var item in InOrderTraversal((AvlTreeNode?) node.Right))
             yield return item;
     }
-    
+
     /// <inheritdoc/>
     public override IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default)
     {
-        return InOrderTraversalAsync((AvlTreeNode?)Root, cancellationToken).GetAsyncEnumerator(cancellationToken);
+        return InOrderTraversalAsync((AvlTreeNode?) Root, cancellationToken).GetAsyncEnumerator(cancellationToken);
     }
 
     /// <summary>
     /// Asynchronously traverses the tree in-order
     /// </summary>
-    private static async IAsyncEnumerable<T> InOrderTraversalAsync(AvlTreeNode? node, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    private static async IAsyncEnumerable<T> InOrderTraversalAsync(AvlTreeNode? node,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (node is null) yield break;
-        await foreach (var item in InOrderTraversalAsync((AvlTreeNode?)node.Left, cancellationToken))
+        await foreach (var item in InOrderTraversalAsync((AvlTreeNode?) node.Left, cancellationToken))
             yield return item;
         yield return node.Value;
-        await foreach (var item in InOrderTraversalAsync((AvlTreeNode?)node.Right, cancellationToken))
+        await foreach (var item in InOrderTraversalAsync((AvlTreeNode?) node.Right, cancellationToken))
             yield return item;
     }
 }
@@ -302,7 +308,7 @@ public class AvlTreeJsonConverter<T> : JsonConverter<AvlTree<T>> where T : IComp
     /// <inheritdoc/>
     public override AvlTree<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-          var tree = new AvlTree<T>();
+        var tree = new AvlTree<T>();
         var count = 0;
 
         if (reader.TokenType != JsonTokenType.StartObject) throw new JsonException("Expected start of object.");
@@ -431,11 +437,11 @@ public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     {
         get
         {
-            var node = FindNode((AvlTreeNode?)Root, key);
+            var node = FindNode((AvlTreeNode?) Root, key);
             if (node is null) throw new KeyNotFoundException($"Key '{key}' not found.");
             return node.Value;
         }
-        set => Root = AddOrUpdate((AvlTreeNode?)Root, key, value);
+        set => Root = AddOrUpdate((AvlTreeNode?) Root, key, value);
     }
 
     /// <summary>
@@ -452,21 +458,21 @@ public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     public override void Add(TKey key, TValue value)
     {
         if (ContainsKey(key)) throw new InvalidOperationException("Key already exists");
-        Root = Add((AvlTreeNode?)Root, key, value);
+        Root = Add((AvlTreeNode?) Root, key, value);
         _count++;
     }
 
     /// <inheritdoc/>
     public override bool ContainsKey(TKey key)
     {
-        return FindNode((AvlTreeNode?)Root, key) is not null;
+        return FindNode((AvlTreeNode?) Root, key) is not null;
     }
 
     /// <inheritdoc/>
     public override bool Remove(TKey key)
     {
         if (!ContainsKey(key)) return false;
-        Root = Remove((AvlTreeNode?)Root, key);
+        Root = Remove((AvlTreeNode?) Root, key);
         _count--;
         return true;
     }
@@ -474,7 +480,7 @@ public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     /// <inheritdoc/>
     public override bool TryGetValue(TKey key, out TValue value)
     {
-        var node = FindNode((AvlTreeNode?)Root, key);
+        var node = FindNode((AvlTreeNode?) Root, key);
         if (node is not null)
         {
             value = node.Value;
@@ -511,11 +517,11 @@ public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     {
         return Contains(item) && Remove(item.Key);
     }
-    
+
     /// <inheritdoc/>
     public override IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
     {
-        return InOrderTraversal((AvlTreeNode?)Root).GetEnumerator();
+        return InOrderTraversal((AvlTreeNode?) Root).GetEnumerator();
     }
 
     /// <summary>
@@ -529,10 +535,10 @@ public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
         switch (comparison)
         {
             case < 0:
-                node.Left = Add((AvlTreeNode?)node.Left, key, value);
+                node.Left = Add((AvlTreeNode?) node.Left, key, value);
                 break;
             case > 0:
-                node.Right = Add((AvlTreeNode?)node.Right, key, value);
+                node.Right = Add((AvlTreeNode?) node.Right, key, value);
                 break;
             default:
                 throw new InvalidOperationException("Key already exists");
@@ -553,10 +559,10 @@ public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
         switch (comparison)
         {
             case < 0:
-                node.Left = AddOrUpdate((AvlTreeNode?)node.Left, key, value);
+                node.Left = AddOrUpdate((AvlTreeNode?) node.Left, key, value);
                 break;
             case > 0:
-                node.Right = AddOrUpdate((AvlTreeNode?)node.Right, key, value);
+                node.Right = AddOrUpdate((AvlTreeNode?) node.Right, key, value);
                 break;
             default:
                 node.Value = value;
@@ -578,20 +584,20 @@ public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
         switch (comparison)
         {
             case < 0:
-                node.Left = Remove((AvlTreeNode?)node.Left, key);
+                node.Left = Remove((AvlTreeNode?) node.Left, key);
                 break;
             case > 0:
-                node.Right = Remove((AvlTreeNode?)node.Right, key);
+                node.Right = Remove((AvlTreeNode?) node.Right, key);
                 break;
             default:
             {
-                if (node.Left is null) return (AvlTreeNode?)node.Right;
-                if (node.Right is null) return (AvlTreeNode?)node.Left;
+                if (node.Left is null) return (AvlTreeNode?) node.Right;
+                if (node.Right is null) return (AvlTreeNode?) node.Left;
 
-                var minLargerNode = GetMinimum((AvlTreeNode)node.Right);
+                var minLargerNode = GetMinimum((AvlTreeNode) node.Right);
                 node.Key = minLargerNode.Key;
                 node.Value = minLargerNode.Value;
-                node.Right = Remove((AvlTreeNode?)node.Right, minLargerNode.Key);
+                node.Right = Remove((AvlTreeNode?) node.Right, minLargerNode.Key);
                 break;
             }
         }
@@ -611,10 +617,10 @@ public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
             switch (comparison)
             {
                 case < 0:
-                    node = (AvlTreeNode?)node.Left;
+                    node = (AvlTreeNode?) node.Left;
                     break;
                 case > 0:
-                    node = (AvlTreeNode?)node.Right;
+                    node = (AvlTreeNode?) node.Right;
                     break;
                 default:
                     return node;
@@ -630,31 +636,33 @@ public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     private static IEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversal(AvlTreeNode? node)
     {
         if (node is null) yield break;
-        foreach (var kvp in InOrderTraversal((AvlTreeNode?)node.Left))
+        foreach (var kvp in InOrderTraversal((AvlTreeNode?) node.Left))
             yield return kvp;
 
         yield return new KeyValuePair<TKey, TValue>(node.Key, node.Value);
 
-        foreach (var kvp in InOrderTraversal((AvlTreeNode?)node.Right))
+        foreach (var kvp in InOrderTraversal((AvlTreeNode?) node.Right))
             yield return kvp;
     }
-    
+
     /// <inheritdoc/>
-    public override IAsyncEnumerator<KeyValuePair<TKey, TValue>> GetAsyncEnumerator(CancellationToken cancellationToken = default)
+    public override IAsyncEnumerator<KeyValuePair<TKey, TValue>> GetAsyncEnumerator(
+        CancellationToken cancellationToken = default)
     {
-        return InOrderTraversalAsync((AvlTreeNode?)Root, cancellationToken).GetAsyncEnumerator(cancellationToken);
+        return InOrderTraversalAsync((AvlTreeNode?) Root, cancellationToken).GetAsyncEnumerator(cancellationToken);
     }
 
     /// <summary>
     /// Asynchronously traverses the tree in-order
     /// </summary>
-    private static async IAsyncEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversalAsync(AvlTreeNode? node, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    private static async IAsyncEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversalAsync(AvlTreeNode? node,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (node is null) yield break;
-        await foreach (var item in InOrderTraversalAsync((AvlTreeNode?)node.Left, cancellationToken))
+        await foreach (var item in InOrderTraversalAsync((AvlTreeNode?) node.Left, cancellationToken))
             yield return item;
         yield return new KeyValuePair<TKey, TValue>(node.Key, node.Value);
-        await foreach (var item in InOrderTraversalAsync((AvlTreeNode?)node.Right, cancellationToken))
+        await foreach (var item in InOrderTraversalAsync((AvlTreeNode?) node.Right, cancellationToken))
             yield return item;
     }
 
@@ -686,7 +694,7 @@ public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     private AvlTreeNode GetMinimum(AvlTreeNode avlTreeNode)
     {
         while (avlTreeNode.Left is not null)
-            avlTreeNode = (AvlTreeNode)avlTreeNode.Left;
+            avlTreeNode = (AvlTreeNode) avlTreeNode.Left;
         return avlTreeNode;
     }
 
@@ -695,7 +703,8 @@ public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     /// </summary>
     private void UpdateHeight(AvlTreeNode avlTreeNode)
     {
-        avlTreeNode.Height = 1 + Math.Max(GetHeight((AvlTreeNode?)avlTreeNode.Left), GetHeight((AvlTreeNode?)avlTreeNode.Right));
+        avlTreeNode.Height = 1 + Math.Max(GetHeight((AvlTreeNode?) avlTreeNode.Left),
+            GetHeight((AvlTreeNode?) avlTreeNode.Right));
     }
 
     /// <summary>
@@ -711,7 +720,7 @@ public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     /// </summary>
     private int GetBalance(AvlTreeNode avlTreeNode)
     {
-        return GetHeight((AvlTreeNode?)avlTreeNode.Left) - GetHeight((AvlTreeNode?)avlTreeNode.Right);
+        return GetHeight((AvlTreeNode?) avlTreeNode.Left) - GetHeight((AvlTreeNode?) avlTreeNode.Right);
     }
 
     /// <summary>
@@ -725,16 +734,18 @@ public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
         {
             case > 1:
             {
-                if (GetBalance((AvlTreeNode?)avlTreeNode.Left!) < 0)
-                    avlTreeNode.Left = RotateLeft((AvlTreeNode?)avlTreeNode.Left ??
-                                                     throw new InvalidOperationException("Error while balancing left node"));
+                if (GetBalance((AvlTreeNode?) avlTreeNode.Left!) < 0)
+                    avlTreeNode.Left = RotateLeft((AvlTreeNode?) avlTreeNode.Left ??
+                                                  throw new InvalidOperationException(
+                                                      "Error while balancing left node"));
                 return RotateRight(avlTreeNode);
             }
             case < -1:
             {
-                if (GetBalance((AvlTreeNode?)avlTreeNode.Right!) > 0)
-                    avlTreeNode.Right = RotateRight((AvlTreeNode?)avlTreeNode.Right ??
-                                                       throw new InvalidOperationException("Error while balancing right node"));
+                if (GetBalance((AvlTreeNode?) avlTreeNode.Right!) > 0)
+                    avlTreeNode.Right = RotateRight((AvlTreeNode?) avlTreeNode.Right ??
+                                                    throw new InvalidOperationException(
+                                                        "Error while balancing right node"));
                 return RotateLeft(avlTreeNode);
             }
             default:
@@ -747,7 +758,7 @@ public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     /// </summary>
     private AvlTreeNode RotateLeft(AvlTreeNode avlTreeNode)
     {
-        var newRoot = (AvlTreeNode?)avlTreeNode.Right!;
+        var newRoot = (AvlTreeNode?) avlTreeNode.Right!;
         avlTreeNode.Right = newRoot.Left;
         newRoot.Left = avlTreeNode;
         UpdateHeight(avlTreeNode);
@@ -760,7 +771,7 @@ public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     /// </summary>
     private AvlTreeNode RotateRight(AvlTreeNode avlTreeNode)
     {
-        var newRoot = (AvlTreeNode?)avlTreeNode.Left!;
+        var newRoot = (AvlTreeNode?) avlTreeNode.Left!;
         avlTreeNode.Left = newRoot.Right;
         newRoot.Right = avlTreeNode;
         UpdateHeight(avlTreeNode);

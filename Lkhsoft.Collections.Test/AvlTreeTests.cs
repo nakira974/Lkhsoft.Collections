@@ -143,7 +143,7 @@ public class AvlTreeTests
 
         Assert.That(list, Is.EqualTo(Expected));
     }
-    
+
     [Test]
     public void JsonSerialization_ShouldWork()
     {
@@ -163,7 +163,7 @@ public class AvlTreeTests
             Assert.That(deserializedTree.Contains(2), Is.True);
         }
     }
-    
+
     [Test]
     public void XmlSerialization_ShouldWork()
     {
@@ -188,7 +188,7 @@ public class AvlTreeTests
             Assert.That(tree, Has.Count.EqualTo(5));
         }
     }
-    
+
     [Test]
     public async Task GetAsyncEnumerator_ShouldWork()
     {
@@ -200,11 +200,8 @@ public class AvlTreeTests
 
         var list = new List<int>();
 
-        await foreach (var item in tree)
-        {
-            list.Add(item);
-        }
+        await foreach (var item in tree) list.Add(item);
 
-        Assert.That(list, Is.EqualTo(new List<int> { 1, 2 }));
+        Assert.That(list, Is.EqualTo(new List<int> {1, 2}));
     }
 }

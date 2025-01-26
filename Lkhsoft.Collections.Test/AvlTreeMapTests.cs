@@ -1,12 +1,12 @@
-﻿using System.Text.Json;
+﻿#region
+
+using System.Text.Json;
 using System.Xml;
 using Lkhsoft.Collections.Trees.Bst;
 
-namespace Lkhsoft.Collections.Test;
+#endregion
 
-using NUnit.Framework;
-using System;
-using System.Collections.Generic;
+namespace Lkhsoft.Collections.Test;
 
 [TestFixture]
 public class AvlTreeMapTests
@@ -53,6 +53,7 @@ public class AvlTreeMapTests
             Assert.That(tree.Remove(2), Is.True);
             Assert.That(tree.Count, Is.EqualTo(2));
         }
+
         Assert.That(tree.ContainsKey(2), Is.False);
     }
 
@@ -97,7 +98,10 @@ public class AvlTreeMapTests
     {
         var tree = new AvlTree<int, string> {{1, "one"}};
 
-        Assert.Throws<KeyNotFoundException>(() => { var value = tree[2]; });
+        Assert.Throws<KeyNotFoundException>(() =>
+        {
+            var value = tree[2];
+        });
     }
 
     [Test]
@@ -233,7 +237,7 @@ public class AvlTreeMapTests
 
         Assert.That(tree.Remove(new KeyValuePair<int, string>(2, "two")), Is.False);
     }
-    
+
     [Test]
     public void JsonSerialization_ShouldWork()
     {
@@ -255,7 +259,7 @@ public class AvlTreeMapTests
             Assert.That(deserializedTree["two"], Is.EqualTo(2));
         }
     }
-    
+
     [Test]
     public void XmlSerialization_ShouldWork()
     {
@@ -280,14 +284,14 @@ public class AvlTreeMapTests
             Assert.That(tree, Has.Count.EqualTo(5));
         }
     }
-    
+
     private static readonly KeyValuePair<int, string>[] Expected =
     [
         new(1, "one"),
         new(2, "two"),
         new(3, "three")
     ];
-    
+
     [Test]
     public void GetEnumerator_ShouldWork()
     {
@@ -305,7 +309,7 @@ public class AvlTreeMapTests
 
         Assert.That(list, Is.EqualTo(Expected));
     }
-    
+
     [Test]
     public async Task GetAsyncEnumerator_ShouldWork()
     {
@@ -317,11 +321,8 @@ public class AvlTreeMapTests
 
         var list = new List<KeyValuePair<int, string>>();
 
-        await foreach (var item in tree)
-        {
-            list.Add(item);
-        }
+        await foreach (var item in tree) list.Add(item);
 
-        Assert.That(list, Is.EqualTo(new List<KeyValuePair<int, string>> { new KeyValuePair<int, string>(1, "one"), new KeyValuePair<int, string>(2, "two") }));
+        Assert.That(list, Is.EqualTo(new List<KeyValuePair<int, string>> {new(1, "one"), new(2, "two")}));
     }
 }

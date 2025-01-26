@@ -1,9 +1,10 @@
-﻿using NUnit.Framework;
-using System;
-using System.Collections.Generic;
+﻿#region
+
 using System.Text.Json;
 using System.Xml;
 using Lkhsoft.Collections.Trees.Bst;
+
+#endregion
 
 namespace Lkhsoft.Collections.Test;
 
@@ -34,7 +35,7 @@ public class BinarySearchTreeTests
     {
         var tree = new BinarySearchTree<int>
         {
-            1,
+            1
         };
 
         Assert.Throws<InvalidOperationException>(() => tree.Add(1));
@@ -56,6 +57,7 @@ public class BinarySearchTreeTests
             Assert.That(tree.Remove(2), Is.True);
             Assert.That(tree.Count, Is.EqualTo(2));
         }
+
         Assert.That(tree.Contains(2), Is.False);
     }
 
@@ -144,14 +146,11 @@ public class BinarySearchTreeTests
         using var enumerator = tree.GetEnumerator();
         var list = new List<int>();
 
-        while (enumerator.MoveNext())
-        {
-            list.Add(enumerator.Current);
-        }
+        while (enumerator.MoveNext()) list.Add(enumerator.Current);
 
-        Assert.That(list, Is.EqualTo(new List<int> { 1, 2, 3 }));
+        Assert.That(list, Is.EqualTo(new List<int> {1, 2, 3}));
     }
-    
+
     [Test]
     public async Task GetAsyncEnumerator_ShouldWork()
     {
@@ -163,14 +162,11 @@ public class BinarySearchTreeTests
 
         var list = new List<int>();
 
-        await foreach (var item in tree)
-        {
-            list.Add(item);
-        }
+        await foreach (var item in tree) list.Add(item);
 
-        Assert.That(list, Is.EqualTo(new List<int> { 1, 2 }));
+        Assert.That(list, Is.EqualTo(new List<int> {1, 2}));
     }
-    
+
     [Test]
     public void JsonSerialization_ShouldWork()
     {

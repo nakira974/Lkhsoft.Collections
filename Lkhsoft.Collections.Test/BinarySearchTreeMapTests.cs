@@ -1,11 +1,10 @@
-﻿using NUnit.Framework;
-using System;
-using System.Collections.Generic;
+﻿#region
+
 using System.Text.Json;
 using System.Xml;
-using System.Xml.Serialization;
-using System.Threading.Tasks;
 using Lkhsoft.Collections.Trees.Bst;
+
+#endregion
 
 namespace Lkhsoft.Collections.Test;
 
@@ -56,6 +55,7 @@ public class BinarySearchTreeMapTests
             Assert.That(tree.Remove(2), Is.True);
             Assert.That(tree.Count, Is.EqualTo(2));
         }
+
         Assert.That(tree.ContainsKey(2), Is.False);
     }
 
@@ -100,7 +100,10 @@ public class BinarySearchTreeMapTests
     {
         var tree = new BinarySearchTree<int, string> {{1, "one"}};
 
-        Assert.Throws<KeyNotFoundException>(() => { var value = tree[2]; });
+        Assert.Throws<KeyNotFoundException>(() =>
+        {
+            var value = tree[2];
+        });
     }
 
     [Test]
@@ -250,7 +253,7 @@ public class BinarySearchTreeMapTests
 
         Assert.That(tree.Remove(new KeyValuePair<int, string>(2, "two")), Is.False);
     }
-    
+
     [Test]
     public void JsonSerialization_ShouldWork()
     {
@@ -297,15 +300,15 @@ public class BinarySearchTreeMapTests
             Assert.That(tree, Has.Count.EqualTo(5));
         }
     }
-    
-    
+
+
     private static readonly KeyValuePair<int, string>[] Expected =
     [
         new(1, "one"),
         new(2, "two"),
         new(3, "three")
     ];
-    
+
     [Test]
     public void GetEnumerator_ShouldWork()
     {
@@ -335,11 +338,8 @@ public class BinarySearchTreeMapTests
 
         var list = new List<KeyValuePair<int, string>>();
 
-        await foreach (var item in tree)
-        {
-            list.Add(item);
-        }
+        await foreach (var item in tree) list.Add(item);
 
-        Assert.That(list, Is.EqualTo(new List<KeyValuePair<int, string>> { new KeyValuePair<int, string>(1, "one"), new KeyValuePair<int, string>(2, "two") }));
+        Assert.That(list, Is.EqualTo(new List<KeyValuePair<int, string>> {new(1, "one"), new(2, "two")}));
     }
 }
