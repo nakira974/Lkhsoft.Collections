@@ -17,10 +17,11 @@
         <PackageTags>Graphs BST B-Tree Trie</PackageTags>
         <LangVersion>default</LangVersion>
         <Company>Lkhsoft</Company>
-        <AssemblyVersion>1.0.1</AssemblyVersion>
+        <AssemblyVersion>1.0.2</AssemblyVersion>
         <FileVersion>$(AssemblyVersion)</FileVersion>
         <RepositoryType>git</RepositoryType>
         <PackageReleaseNotes>XML and JSON serialization now supported</PackageReleaseNotes>
+        <NeutralLanguage>en</NeutralLanguage>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Debug'">

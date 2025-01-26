@@ -153,6 +153,25 @@ public class BinarySearchTreeTests
     }
     
     [Test]
+    public async Task GetAsyncEnumerator_ShouldWork()
+    {
+        var tree = new BinarySearchTree<int>
+        {
+            {1},
+            {2}
+        };
+
+        var list = new List<int>();
+
+        await foreach (var item in tree)
+        {
+            list.Add(item);
+        }
+
+        Assert.That(list, Is.EqualTo(new List<int> { 1, 2 }));
+    }
+    
+    [Test]
     public void JsonSerialization_ShouldWork()
     {
         var tree = new BinarySearchTree<int>

@@ -1,13 +1,6 @@
 ﻿#region
-
-using System.Collections;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Xml;
-using System.Xml.Schema;
-using System.Xml.Serialization;
-using Lkhsoft.Collections.Trees.Serialization;
-
 #endregion
 
 namespace Lkhsoft.Collections.Trees.Bst;
@@ -16,86 +9,52 @@ namespace Lkhsoft.Collections.Trees.Bst;
 /// AVL tree implementation
 /// </summary>
 [JsonConverter(typeof(AvlTreeJsonConverterFactory))]
-public class AvlTree<T> : ICollection<T>, IXmlSerializable where T : IComparable<T>
+public class AvlTree<T> : BinarySearchTree<T> where T : IComparable<T>
 {
     /// <summary>
     /// Node of the AVL tree
     /// </summary>
-    private class AvlNode
+    private class AvlTreeNode : BinarySearchTreeNode
     {
-        /// <summary>
-        /// Value of the node
-        /// </summary>
-        public T Value { get; set; }
-
         /// <summary>
         /// Height of the node
         /// </summary>
         public int Height { get; set; }
 
         /// <summary>
-        /// Left child node
-        /// </summary>
-        public AvlNode? Left { get; set; }
-
-        /// <summary>
-        /// Right child node
-        /// </summary>
-        public AvlNode? Right { get; set; }
-
-        /// <summary>
         /// Base constructor
         /// </summary>
-        public AvlNode(T value)
+        public AvlTreeNode(T value) : base(value)
         {
-            Value = value;
             Height = 1;
         }
     }
 
     /// <summary>
-    /// Root node of the tree
+    /// 
     /// </summary>
-    private AvlNode? _root;
-
-    /// <summary>
-    /// Number of elements in the collection
-    /// </summary>
-    private int _count;
-
-    /// <summary>
-    /// Gets the number of elements in the collection
-    /// </summary>
-    public int Count => _count;
-
-    /// <summary>
-    /// Gets a value indicating whether the collection is read-only
-    /// </summary>
-    public bool IsReadOnly => false;
-
-    /// <inheritdoc/>
-    public void Add(T item)
+    /// <param name="item"></param>
+    public override void Add(T item)
     {
-        if(Contains(item)) throw new InvalidOperationException("Duplicate items are not allowed in an AVL tree.");
-        _root = Add(_root, item);
+        Root = Add((AvlTreeNode?)Root, item);
         _count++;
     }
 
     /// <summary>
     /// Adds the given item to the given subtree
     /// </summary>
-    private AvlNode Add(AvlNode? node, T item)
+    private AvlTreeNode Add(AvlTreeNode? node, T item)
     {
-        if (node is null) return new AvlNode(item);
+        if (node is null) return new AvlTreeNode(item);
 
         var comparison = item.CompareTo(node.Value);
         switch (comparison)
         {
             case < 0:
-                node.Left = Add(node.Left, item);
+                node.Left = Add((AvlTreeNode?)node.Left, item);
                 break;
             case > 0:
-                node.Right = Add(node.Right, item);
+                node.Right = Add((AvlTreeNode?)node.Right, item);
                 break;
             default:
                 throw new InvalidOperationException("Duplicate items are not allowed in an AVL tree.");
@@ -108,10 +67,10 @@ public class AvlTree<T> : ICollection<T>, IXmlSerializable where T : IComparable
     /// <summary>
     /// Removes the node with the given value from the tree
     /// </summary>
-    public bool Remove(T item)
+    public override bool Remove(T item)
     {
         if (!Contains(item)) return false;
-        _root = Remove(_root, item);
+        Root = Remove((AvlTreeNode?)Root, item);
         _count--;
         return true;
     }
@@ -119,7 +78,7 @@ public class AvlTree<T> : ICollection<T>, IXmlSerializable where T : IComparable
     /// <summary>
     /// Removes the node with the given value from the given subtree
     /// </summary>
-    private AvlNode? Remove(AvlNode? node, T item)
+    private AvlTreeNode? Remove(AvlTreeNode? node, T item)
     {
         if (node is null) return null;
 
@@ -127,21 +86,21 @@ public class AvlTree<T> : ICollection<T>, IXmlSerializable where T : IComparable
         switch (comparison)
         {
             case < 0:
-                node.Left = Remove(node.Left, item);
+                node.Left = Remove((AvlTreeNode?)node.Left, item);
                 break;
             case > 0:
-                node.Right = Remove(node.Right, item);
+                node.Right = Remove((AvlTreeNode?)node.Right, item);
                 break;
             default:
             {
-                if (node.Left is null) return node.Right;
-                if (node.Right is null) return node.Left;
+                if (node.Left is null) return (AvlTreeNode?)node.Right;
+                if (node.Right is null) return (AvlTreeNode?)node.Left;
 
-                var minLargerNode = GetMinimum(node.Right);
+                var minLargerNode = GetMinimum((AvlTreeNode)node.Right);
                 if (minLargerNode is not null)
                 {
                     node.Value = minLargerNode.Value;
-                    node.Right = Remove(node.Right, minLargerNode.Value);
+                    node.Right = Remove((AvlTreeNode?)node.Right, minLargerNode.Value);
                 }
                 else
                 {
@@ -156,16 +115,18 @@ public class AvlTree<T> : ICollection<T>, IXmlSerializable where T : IComparable
         return Balance(node);
     }
 
-    /// <inheritdoc/>
-    public bool Contains(T item)
+    /// <summary>
+    /// Gets a value indicating whether the tree contains the given item
+    /// </summary>
+    public override bool Contains(T item)
     {
-        return FindNode(_root, item) is not null;
+        return FindNode((AvlTreeNode?)Root, item) is not null;
     }
 
     /// <summary>
     /// Finds the node with the given value in the given subtree
     /// </summary>
-    private AvlNode? FindNode(AvlNode? node, T item)
+    private AvlTreeNode? FindNode(AvlTreeNode? node, T item)
     {
         while (node is not null)
         {
@@ -173,10 +134,10 @@ public class AvlTree<T> : ICollection<T>, IXmlSerializable where T : IComparable
             switch (comparison)
             {
                 case < 0:
-                    node = node.Left;
+                    node = (AvlTreeNode?)node.Left;
                     break;
                 case > 0:
-                    node = node.Right;
+                    node = (AvlTreeNode?)node.Right;
                     break;
                 default:
                     return node;
@@ -189,25 +150,25 @@ public class AvlTree<T> : ICollection<T>, IXmlSerializable where T : IComparable
     /// <summary>
     /// Gets the minimum node in the given subtree
     /// </summary>
-    private AvlNode? GetMinimum(AvlNode avlNode)
+    private AvlTreeNode? GetMinimum(AvlTreeNode avlTreeNode)
     {
-        while (avlNode.Left is not null)
-            avlNode = avlNode.Left;
-        return avlNode;
+        while (avlTreeNode.Left is not null)
+            avlTreeNode = (AvlTreeNode)avlTreeNode.Left;
+        return avlTreeNode;
     }
 
     /// <summary>
     /// Updates the height of the given node
     /// </summary>
-    private void UpdateHeight(AvlNode avlNode)
+    private void UpdateHeight(AvlTreeNode avlTreeNode)
     {
-        avlNode.Height = 1 + Math.Max(GetHeight(avlNode.Left), GetHeight(avlNode.Right));
+        avlTreeNode.Height = 1 + Math.Max(GetHeight((AvlTreeNode?)avlTreeNode.Left), GetHeight((AvlTreeNode?)avlTreeNode.Right));
     }
 
     /// <summary>
     /// Gets the height of the given node
     /// </summary>
-    private int GetHeight(AvlNode? node)
+    private int GetHeight(AvlTreeNode? node)
     {
         return node?.Height ?? 0;
     }
@@ -215,77 +176,72 @@ public class AvlTree<T> : ICollection<T>, IXmlSerializable where T : IComparable
     /// <summary>
     ///  Gets the balance of the given node
     /// </summary>
-    private int GetBalance(AvlNode avlNode)
+    private int GetBalance(AvlTreeNode avlTreeNode)
     {
-        return GetHeight(avlNode.Left) - GetHeight(avlNode.Right);
+        return GetHeight((AvlTreeNode?)avlTreeNode.Left) - GetHeight((AvlTreeNode?)avlTreeNode.Right);
     }
 
     /// <summary>
     /// Balances the given node
     /// </summary>
-    private AvlNode Balance(AvlNode avlNode)
+    private AvlTreeNode Balance(AvlTreeNode avlTreeNode)
     {
-        var balance = GetBalance(avlNode);
+        var balance = GetBalance(avlTreeNode);
 
         switch (balance)
         {
             case > 1:
             {
-                if (GetBalance(avlNode.Left ?? throw new InvalidOperationException("Error while balancing left node")) <
+                if (GetBalance((AvlTreeNode?)avlTreeNode.Left ?? throw new InvalidOperationException("Error while balancing left node")) <
                     0)
-                    avlNode.Left = RotateLeft(avlNode.Left);
-                return RotateRight(avlNode);
+                    avlTreeNode.Left = RotateLeft((AvlTreeNode)avlTreeNode.Left);
+                return RotateRight(avlTreeNode);
             }
             case < -1:
             {
-                if (GetBalance(avlNode.Right!) > 0)
-                    avlNode.Right = RotateRight(avlNode.Right ??
+                if (GetBalance((AvlTreeNode)avlTreeNode.Right!) > 0)
+                    avlTreeNode.Right = RotateRight((AvlTreeNode?)avlTreeNode.Right ??
                                                 throw new InvalidOperationException(
                                                     "Error while balancing right node"));
-                return RotateLeft(avlNode);
+                return RotateLeft(avlTreeNode);
             }
             default:
-                return avlNode;
+                return avlTreeNode;
         }
     }
 
     /// <summary>
     ///  Rotates the given node to the left
     /// </summary>
-    private AvlNode RotateLeft(AvlNode avlNode)
+    private AvlTreeNode RotateLeft(AvlTreeNode avlTreeNode)
     {
-        var newRoot = avlNode.Right ?? throw new InvalidOperationException("Error while rotating left node");
+        var newRoot = avlTreeNode.Right ?? throw new InvalidOperationException("Error while rotating left node");
 
-        avlNode.Right = newRoot.Left;
-        newRoot.Left = avlNode;
-        UpdateHeight(avlNode);
-        UpdateHeight(newRoot);
-        return newRoot;
+        avlTreeNode.Right = newRoot.Left;
+        newRoot.Left = avlTreeNode;
+        UpdateHeight(avlTreeNode);
+        UpdateHeight((AvlTreeNode)newRoot);
+        return (AvlTreeNode)newRoot;
     }
 
     /// <summary>
     ///   Rotates the given node to the right
     /// </summary>
-    private AvlNode RotateRight(AvlNode avlNode)
+    private AvlTreeNode RotateRight(AvlTreeNode avlTreeNode)
     {
-        var newRoot = avlNode.Left ?? throw new InvalidOperationException("Error while rotating right node");
+        var newRoot = avlTreeNode.Left ?? throw new InvalidOperationException("Error while rotating right node");
 
-        avlNode.Left = newRoot.Right;
-        newRoot.Right = avlNode;
-        UpdateHeight(avlNode);
-        UpdateHeight(newRoot);
-        return newRoot;
+        avlTreeNode.Left = newRoot.Right;
+        newRoot.Right = avlTreeNode;
+        UpdateHeight(avlTreeNode);
+        UpdateHeight((AvlTreeNode)newRoot);
+        return (AvlTreeNode)newRoot;
     }
 
-    /// <inheritdoc/>
-    public void Clear()
-    {
-        _root = null;
-        _count = 0;
-    }
-
-    /// <inheritdoc/>
-    public void CopyTo(T[] array, int arrayIndex)
+    /// <summary>
+    /// Copies the elements of the tree to an array, starting at a particular array index
+    /// </summary>
+    public override void CopyTo(T[] array, int arrayIndex)
     {
         ArgumentNullException.ThrowIfNull(array);
         if (arrayIndex < 0 || arrayIndex > array.Length)
@@ -296,61 +252,44 @@ public class AvlTree<T> : ICollection<T>, IXmlSerializable where T : IComparable
         foreach (var item in this) array[arrayIndex++] = item;
     }
 
-    /// <inheritdoc/>
-    public IEnumerator<T> GetEnumerator()
+    /// <summary>
+    /// Returns an enumerator that iterates through the collection
+    /// </summary>
+    public override IEnumerator<T> GetEnumerator()
     {
-        return InOrderTraversal(_root).GetEnumerator();
-    }
-
-    /// <inheritdoc/>
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
+        return InOrderTraversal((AvlTreeNode?)Root).GetEnumerator();
     }
 
     /// <summary>
     /// Traverses the tree in in-order
     /// </summary>
-    private IEnumerable<T> InOrderTraversal(AvlNode? node)
+    private IEnumerable<T> InOrderTraversal(AvlTreeNode? node)
     {
         if (node is null) yield break;
-        foreach (var item in InOrderTraversal(node.Left))
+        foreach (var item in InOrderTraversal((AvlTreeNode?)node.Left))
             yield return item;
         yield return node.Value;
-        foreach (var item in InOrderTraversal(node.Right))
+        foreach (var item in InOrderTraversal((AvlTreeNode?)node.Right))
             yield return item;
     }
-
+    
     /// <inheritdoc/>
-    public XmlSchema? GetSchema()
+    public override IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default)
     {
-        return null;
+        return InOrderTraversalAsync((AvlTreeNode?)Root, cancellationToken).GetAsyncEnumerator(cancellationToken);
     }
 
-    /// <inheritdoc/>
-    public void ReadXml(XmlReader reader)
+    /// <summary>
+    /// Asynchronously traverses the tree in-order
+    /// </summary>
+    private static async IAsyncEnumerable<T> InOrderTraversalAsync(AvlTreeNode? node, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        Clear();
-
-        // Désérialiser l'arbre
-        var serializer = new XmlSerializer(typeof(SerializedNodes<T>));
-        var nodes = (SerializedNodes<T>)serializer.Deserialize(reader)!;
-
-        // Ajouter les valeurs à la collection
-        nodes?.Nodes.ForEach(x => Add(x.Value));
-
-        // Valider la correspondance du count
-        if (nodes?.Count != Count)
-            throw new InvalidOperationException("Error while reading the AVL tree from XML");
-    }
-
-    /// <inheritdoc/>
-    public void WriteXml(XmlWriter writer)
-    {
-        var nodes = new List<SerializedNode<T>>(this.Count);
-        nodes.AddRange(this.Select(element => new SerializedNode<T>(element)));
-        var xmlNodes = new SerializedNodes<T>(nodes);
-        new XmlSerializer(typeof(SerializedNodes<T>)).Serialize(writer, xmlNodes);
+        if (node is null) yield break;
+        await foreach (var item in InOrderTraversalAsync((AvlTreeNode?)node.Left, cancellationToken))
+            yield return item;
+        yield return node.Value;
+        await foreach (var item in InOrderTraversalAsync((AvlTreeNode?)node.Right, cancellationToken))
+            yield return item;
     }
 }
 
@@ -474,108 +413,68 @@ public class AvlTreeJsonConverterFactory : JsonConverterFactory
 /// AVL tree map implementation
 /// </summary>
 [JsonConverter(typeof(AvlTreeMapJsonConverterFactory))]
-public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
+public class AvlTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     where TKey : IComparable<TKey>
 {
-    private class Node(TKey key, TValue value)
+    private class AvlTreeNode(TKey key, TValue value) : BinarySearchTreeNode(key, value)
     {
-        /// <summary>
-        /// Key of the node
-        /// </summary>
-        public TKey Key { get; set; } = key;
-
-        /// <summary>
-        /// Value of the node
-        /// </summary>
-        public TValue Value { get; set; } = value;
-
         /// <summary>
         /// Height of the node
         /// </summary>
         public int Height { get; set; } = 1;
-
-        /// <summary>
-        /// Left child node
-        /// </summary>
-        public Node? Left { get; set; }
-
-        /// <summary>
-        /// Right child node
-        /// </summary>
-        public Node? Right { get; set; }
     }
-
-    /// <summary>
-    /// Root node of the tree
-    /// </summary>
-    private Node? _root;
-
-    /// <summary>
-    /// Number of elements in the collection
-    /// </summary>
-    private int _count;
 
     /// <summary>
     /// Gets the value associated with the given key
     /// </summary>
-    public TValue this[TKey key]
+    public override TValue this[TKey key]
     {
         get
         {
-            var node = FindNode(_root, key);
+            var node = FindNode((AvlTreeNode?)Root, key);
             if (node is null) throw new KeyNotFoundException($"Key '{key}' not found.");
             return node.Value;
         }
-        set => _root = AddOrUpdate(_root, key, value);
+        set => Root = AddOrUpdate((AvlTreeNode?)Root, key, value);
     }
 
     /// <summary>
     /// Gets the keys of the tree
     /// </summary>
-    public ICollection<TKey> Keys => GetKeys();
+    public override ICollection<TKey> Keys => GetKeys();
 
     /// <summary>
     /// Gets the values of the tree
     /// </summary>
-    public ICollection<TValue> Values => GetValues();
-
-    /// <summary>
-    /// Gets the number of elements in the collection
-    /// </summary>
-    public int Count => _count;
-
-    /// <summary>
-    /// Gets a value indicating whether the collection is read-only
-    /// </summary>
-    public bool IsReadOnly => false;
+    public override ICollection<TValue> Values => GetValues();
 
     /// <inheritdoc/>
-    public void Add(TKey key, TValue value)
+    public override void Add(TKey key, TValue value)
     {
         if (ContainsKey(key)) throw new InvalidOperationException("Key already exists");
-        _root = Add(_root, key, value);
+        Root = Add((AvlTreeNode?)Root, key, value);
         _count++;
     }
 
     /// <inheritdoc/>
-    public bool ContainsKey(TKey key)
+    public override bool ContainsKey(TKey key)
     {
-        return FindNode(_root, key) is not null;
+        return FindNode((AvlTreeNode?)Root, key) is not null;
     }
 
     /// <inheritdoc/>
-    public bool Remove(TKey key)
+    public override bool Remove(TKey key)
     {
         if (!ContainsKey(key)) return false;
-        _root = Remove(_root, key);
+        Root = Remove((AvlTreeNode?)Root, key);
         _count--;
         return true;
     }
 
     /// <inheritdoc/>
-    public bool TryGetValue(TKey key, out TValue value)
+    public override bool TryGetValue(TKey key, out TValue value)
     {
-        var node = FindNode(_root, key);
+        var node = FindNode((AvlTreeNode?)Root, key);
         if (node is not null)
         {
             value = node.Value;
@@ -587,19 +486,19 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
     }
 
     /// <inheritdoc/>
-    public void Add(KeyValuePair<TKey, TValue> item)
+    public override void Add(KeyValuePair<TKey, TValue> item)
     {
         Add(item.Key, item.Value);
     }
 
     /// <inheritdoc/>
-    public bool Contains(KeyValuePair<TKey, TValue> item)
+    public override bool Contains(KeyValuePair<TKey, TValue> item)
     {
         return TryGetValue(item.Key, out var value) && EqualityComparer<TValue>.Default.Equals(value, item.Value);
     }
 
     /// <inheritdoc/>
-    public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+    public override void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
     {
         foreach (var kvp in this)
             array[arrayIndex++] = kvp;
@@ -608,45 +507,32 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
     /// <summary>
     /// Removes the given key-value pair from the tree
     /// </summary>
-    public bool Remove(KeyValuePair<TKey, TValue> item)
+    public override bool Remove(KeyValuePair<TKey, TValue> item)
     {
         return Contains(item) && Remove(item.Key);
     }
-
+    
     /// <inheritdoc/>
-    public void Clear()
+    public override IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
     {
-        _root = null;
-        _count = 0;
-    }
-
-    /// <inheritdoc/>
-    public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
-    {
-        return InOrderTraversal(_root).GetEnumerator();
-    }
-
-    /// <inheritdoc/>
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
+        return InOrderTraversal((AvlTreeNode?)Root).GetEnumerator();
     }
 
     /// <summary>
     /// Adds the given key-value pair to the tree
     /// </summary>
-    private Node Add(Node? node, TKey key, TValue value)
+    private AvlTreeNode Add(AvlTreeNode? node, TKey key, TValue value)
     {
-        if (node is null) return new Node(key, value);
+        if (node is null) return new AvlTreeNode(key, value);
 
         var comparison = key.CompareTo(node.Key);
         switch (comparison)
         {
             case < 0:
-                node.Left = Add(node.Left, key, value);
+                node.Left = Add((AvlTreeNode?)node.Left, key, value);
                 break;
             case > 0:
-                node.Right = Add(node.Right, key, value);
+                node.Right = Add((AvlTreeNode?)node.Right, key, value);
                 break;
             default:
                 throw new InvalidOperationException("Key already exists");
@@ -659,18 +545,18 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
     /// <summary>
     /// Adds the given key-value pair to the given subtree
     /// </summary>
-    private Node AddOrUpdate(Node? node, TKey key, TValue value)
+    private AvlTreeNode AddOrUpdate(AvlTreeNode? node, TKey key, TValue value)
     {
-        if (node is null) return new Node(key, value);
+        if (node is null) return new AvlTreeNode(key, value);
 
         var comparison = key.CompareTo(node.Key);
         switch (comparison)
         {
             case < 0:
-                node.Left = AddOrUpdate(node.Left, key, value);
+                node.Left = AddOrUpdate((AvlTreeNode?)node.Left, key, value);
                 break;
             case > 0:
-                node.Right = AddOrUpdate(node.Right, key, value);
+                node.Right = AddOrUpdate((AvlTreeNode?)node.Right, key, value);
                 break;
             default:
                 node.Value = value;
@@ -684,7 +570,7 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
     /// <summary>
     /// Removes the node with the given key from the tree
     /// </summary>
-    private Node? Remove(Node? node, TKey key)
+    private AvlTreeNode? Remove(AvlTreeNode? node, TKey key)
     {
         if (node is null) return null;
 
@@ -692,20 +578,20 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
         switch (comparison)
         {
             case < 0:
-                node.Left = Remove(node.Left, key);
+                node.Left = Remove((AvlTreeNode?)node.Left, key);
                 break;
             case > 0:
-                node.Right = Remove(node.Right, key);
+                node.Right = Remove((AvlTreeNode?)node.Right, key);
                 break;
             default:
             {
-                if (node.Left is null) return node.Right;
-                if (node.Right is null) return node.Left;
+                if (node.Left is null) return (AvlTreeNode?)node.Right;
+                if (node.Right is null) return (AvlTreeNode?)node.Left;
 
-                var minLargerNode = GetMinimum(node.Right);
+                var minLargerNode = GetMinimum((AvlTreeNode)node.Right);
                 node.Key = minLargerNode.Key;
                 node.Value = minLargerNode.Value;
-                node.Right = Remove(node.Right, minLargerNode.Key);
+                node.Right = Remove((AvlTreeNode?)node.Right, minLargerNode.Key);
                 break;
             }
         }
@@ -717,7 +603,7 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
     /// <summary>
     /// Finds the node with the given key in the given subtree
     /// </summary>
-    private static Node? FindNode(Node? node, TKey key)
+    private static AvlTreeNode? FindNode(AvlTreeNode? node, TKey key)
     {
         while (node is not null)
         {
@@ -725,10 +611,10 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
             switch (comparison)
             {
                 case < 0:
-                    node = node.Left;
+                    node = (AvlTreeNode?)node.Left;
                     break;
                 case > 0:
-                    node = node.Right;
+                    node = (AvlTreeNode?)node.Right;
                     break;
                 default:
                     return node;
@@ -741,16 +627,35 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
     /// <summary>
     /// Traverses the tree in in-order
     /// </summary>
-    private static IEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversal(Node? node)
+    private static IEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversal(AvlTreeNode? node)
     {
         if (node is null) yield break;
-        foreach (var kvp in InOrderTraversal(node.Left))
+        foreach (var kvp in InOrderTraversal((AvlTreeNode?)node.Left))
             yield return kvp;
 
         yield return new KeyValuePair<TKey, TValue>(node.Key, node.Value);
 
-        foreach (var kvp in InOrderTraversal(node.Right))
+        foreach (var kvp in InOrderTraversal((AvlTreeNode?)node.Right))
             yield return kvp;
+    }
+    
+    /// <inheritdoc/>
+    public override IAsyncEnumerator<KeyValuePair<TKey, TValue>> GetAsyncEnumerator(CancellationToken cancellationToken = default)
+    {
+        return InOrderTraversalAsync((AvlTreeNode?)Root, cancellationToken).GetAsyncEnumerator(cancellationToken);
+    }
+
+    /// <summary>
+    /// Asynchronously traverses the tree in-order
+    /// </summary>
+    private static async IAsyncEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversalAsync(AvlTreeNode? node, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        if (node is null) yield break;
+        await foreach (var item in InOrderTraversalAsync((AvlTreeNode?)node.Left, cancellationToken))
+            yield return item;
+        yield return new KeyValuePair<TKey, TValue>(node.Key, node.Value);
+        await foreach (var item in InOrderTraversalAsync((AvlTreeNode?)node.Right, cancellationToken))
+            yield return item;
     }
 
     /// <summary>
@@ -778,25 +683,25 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
     /// <summary>
     /// Gets the minimum node in the given subtree
     /// </summary>
-    private Node GetMinimum(Node node)
+    private AvlTreeNode GetMinimum(AvlTreeNode avlTreeNode)
     {
-        while (node.Left is not null)
-            node = node.Left;
-        return node;
+        while (avlTreeNode.Left is not null)
+            avlTreeNode = (AvlTreeNode)avlTreeNode.Left;
+        return avlTreeNode;
     }
 
     /// <summary>
     /// Updates the height of the given node
     /// </summary>
-    private void UpdateHeight(Node node)
+    private void UpdateHeight(AvlTreeNode avlTreeNode)
     {
-        node.Height = 1 + Math.Max(GetHeight(node.Left), GetHeight(node.Right));
+        avlTreeNode.Height = 1 + Math.Max(GetHeight((AvlTreeNode?)avlTreeNode.Left), GetHeight((AvlTreeNode?)avlTreeNode.Right));
     }
 
     /// <summary>
     /// Gets the height of the given node
     /// </summary>
-    private int GetHeight(Node? node)
+    private int GetHeight(AvlTreeNode? node)
     {
         return node?.Height ?? 0;
     }
@@ -804,48 +709,48 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
     /// <summary>
     /// Gets the balance of the given node
     /// </summary>
-    private int GetBalance(Node node)
+    private int GetBalance(AvlTreeNode avlTreeNode)
     {
-        return GetHeight(node.Left) - GetHeight(node.Right);
+        return GetHeight((AvlTreeNode?)avlTreeNode.Left) - GetHeight((AvlTreeNode?)avlTreeNode.Right);
     }
 
     /// <summary>
     /// Balances the given node
     /// </summary>
-    private Node Balance(Node node)
+    private AvlTreeNode Balance(AvlTreeNode avlTreeNode)
     {
-        var balance = GetBalance(node);
+        var balance = GetBalance(avlTreeNode);
 
         switch (balance)
         {
             case > 1:
             {
-                if (GetBalance(node.Left!) < 0)
-                    node.Left = RotateLeft(node.Left ??
-                                           throw new InvalidOperationException("Error while balancing left node"));
-                return RotateRight(node);
+                if (GetBalance((AvlTreeNode?)avlTreeNode.Left!) < 0)
+                    avlTreeNode.Left = RotateLeft((AvlTreeNode?)avlTreeNode.Left ??
+                                                     throw new InvalidOperationException("Error while balancing left node"));
+                return RotateRight(avlTreeNode);
             }
             case < -1:
             {
-                if (GetBalance(node.Right!) > 0)
-                    node.Right = RotateRight(node.Right ??
-                                             throw new InvalidOperationException("Error while balancing right node"));
-                return RotateLeft(node);
+                if (GetBalance((AvlTreeNode?)avlTreeNode.Right!) > 0)
+                    avlTreeNode.Right = RotateRight((AvlTreeNode?)avlTreeNode.Right ??
+                                                       throw new InvalidOperationException("Error while balancing right node"));
+                return RotateLeft(avlTreeNode);
             }
             default:
-                return node;
+                return avlTreeNode;
         }
     }
 
     /// <summary>
     /// Rotates the given node to the left
     /// </summary>
-    private Node RotateLeft(Node node)
+    private AvlTreeNode RotateLeft(AvlTreeNode avlTreeNode)
     {
-        var newRoot = node.Right!;
-        node.Right = newRoot.Left;
-        newRoot.Left = node;
-        UpdateHeight(node);
+        var newRoot = (AvlTreeNode?)avlTreeNode.Right!;
+        avlTreeNode.Right = newRoot.Left;
+        newRoot.Left = avlTreeNode;
+        UpdateHeight(avlTreeNode);
         UpdateHeight(newRoot);
         return newRoot;
     }
@@ -853,52 +758,14 @@ public class AvlTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSerializable
     /// <summary>
     /// Rotates the given node to the right
     /// </summary>
-    private Node RotateRight(Node node)
+    private AvlTreeNode RotateRight(AvlTreeNode avlTreeNode)
     {
-        var newRoot = node.Left!;
-        node.Left = newRoot.Right;
-        newRoot.Right = node;
-        UpdateHeight(node);
+        var newRoot = (AvlTreeNode?)avlTreeNode.Left!;
+        avlTreeNode.Left = newRoot.Right;
+        newRoot.Right = avlTreeNode;
+        UpdateHeight(avlTreeNode);
         UpdateHeight(newRoot);
         return newRoot;
-    }
-
-    /// <inheritdoc/>
-    public XmlSchema? GetSchema()
-    {
-        return null;
-    }
-
-    /// <inheritdoc/>
-    public void ReadXml(XmlReader reader)
-    {
-        Clear();
-
-        // Désérialiser l'arbre
-        var serializer = new XmlSerializer(typeof(SerializedNodes<TKey, TValue>));
-        var nodes = (SerializedNodes<TKey, TValue>)serializer.Deserialize(reader)!;
-
-        // Ajouter les valeurs à la collection
-        nodes?.Nodes.ForEach(x => Add(x.Key, x.Value));
-
-        // Valider la correspondance du count
-        if (nodes?.Count != Count)
-            throw new InvalidOperationException("Error while reading the AVL tree from XML");
-    }
-
-    /// <inheritdoc/>
-    public void WriteXml(XmlWriter writer)
-    {
-        foreach (var kvp in this)
-        {
-            var keySerializer = new XmlSerializer(typeof(TKey));
-            var valueSerializer = new XmlSerializer(typeof(TValue));
-
-            writer.WriteStartElement("Node");
-            keySerializer.Serialize(writer, kvp.Key);
-            valueSerializer.Serialize(writer, kvp.Value);
-            writer.WriteEndElement();
-        }
     }
 }
 

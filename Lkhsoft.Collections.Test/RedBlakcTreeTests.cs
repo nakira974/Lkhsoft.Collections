@@ -121,4 +121,43 @@ public class RedBlackTreeTests
             Assert.That(tree, Has.Count.EqualTo(5));
         }
     }
+    
+    private static readonly int[] Expected = [10, 15, 20];
+
+    [Test]
+    public void GetEnumerator_ShouldWork()
+    {
+        var tree = new RedBlackTree<int>
+        {
+            10,
+            20,
+            15
+        };
+
+        using var enumerator = tree.GetEnumerator();
+        var list = new List<int>();
+
+        while (enumerator.MoveNext()) list.Add(enumerator.Current);
+
+        Assert.That(list, Is.EqualTo(Expected));
+    }
+    
+    [Test]
+    public async Task GetAsyncEnumerator_ShouldWork()
+    {
+        var tree = new RedBlackTree<int>
+        {
+            {1},
+            {2}
+        };
+
+        var list = new List<int>();
+
+        await foreach (var item in tree)
+        {
+            list.Add(item);
+        }
+
+        Assert.That(list, Is.EqualTo(new List<int> { 1, 2 }));
+    }
 }

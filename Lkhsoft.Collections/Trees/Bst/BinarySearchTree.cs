@@ -8,16 +8,17 @@ using Lkhsoft.Collections.Trees.Serialization;
 
 namespace Lkhsoft.Collections.Trees.Bst;
 
+
 /// <summary>
 /// Binary search tree implementation
 /// </summary>
 [JsonConverter(typeof(BinarySearchTreeJsonConverterFactory))]
-public class BinarySearchTree<T> : ICollection<T>, IXmlSerializable where T : IComparable<T>
+public class BinarySearchTree<T> : ICollection<T>,  IAsyncEnumerable<T>, IXmlSerializable where T : IComparable<T>
 {
     /// <summary>
     /// Binary search tree node
     /// </summary>
-    private class Node
+    protected class BinarySearchTreeNode
     {
         /// <summary>
         /// Node value
@@ -27,18 +28,18 @@ public class BinarySearchTree<T> : ICollection<T>, IXmlSerializable where T : IC
         /// <summary>
         /// Left child
         /// </summary>
-        public Node? Left { get; set; }
+        public BinarySearchTreeNode? Left { get; set; }
         
         /// <summary>
         /// Right child
         /// </summary>
-        public Node? Right { get; set; }
+        public BinarySearchTreeNode? Right { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="value"></param>
-        public Node(T value)
+        public BinarySearchTreeNode(T value)
         {
             Value = value;
         }
@@ -47,12 +48,12 @@ public class BinarySearchTree<T> : ICollection<T>, IXmlSerializable where T : IC
     /// <summary>
     /// Tree root
     /// </summary>
-    private Node? _root;
+    private protected BinarySearchTreeNode? Root;
     
     /// <summary>
     /// Number of elements in the tree
     /// </summary>
-    private int _count;
+    private protected int _count;
 
     /// <inheritdoc/>
     public int Count => _count;
@@ -61,19 +62,19 @@ public class BinarySearchTree<T> : ICollection<T>, IXmlSerializable where T : IC
     public bool IsReadOnly => false;
 
     /// <inheritdoc/>
-    public void Add(T item)
+    public virtual void Add(T item)
     {
         if(Contains(item)) throw new InvalidOperationException("Item already exists");
-        _root = Add(_root, item);
+        Root = Add(Root, item);
         _count++;
     }
 
     /// <summary>
     /// Add an item to the tree
     /// </summary>
-    private static Node Add(Node? node, T item)
+    private static BinarySearchTreeNode Add(BinarySearchTreeNode? node, T item)
     {
-        if (node is null) return new Node(item);
+        if (node is null) return new BinarySearchTreeNode(item);
 
         var comparison = item.CompareTo(node.Value);
         switch (comparison)
@@ -90,10 +91,10 @@ public class BinarySearchTree<T> : ICollection<T>, IXmlSerializable where T : IC
     }
 
     /// <inheritdoc/>
-    public bool Remove(T item)
+    public virtual bool Remove(T item)
     {
         if (!Contains(item)) return false;
-        _root = Remove(_root ?? throw new InvalidOperationException("Root is null"), item);
+        Root = Remove(Root ?? throw new InvalidOperationException("Root is null"), item);
         _count--;
         return true;
     }
@@ -101,7 +102,7 @@ public class BinarySearchTree<T> : ICollection<T>, IXmlSerializable where T : IC
     /// <summary>
     /// Removes an item from the tree
     /// </summary>
-    private static Node? Remove(Node? node, T item)
+    private static BinarySearchTreeNode? Remove(BinarySearchTreeNode? node, T item)
     {
         if (node is null) return null;
 
@@ -129,15 +130,15 @@ public class BinarySearchTree<T> : ICollection<T>, IXmlSerializable where T : IC
     }
 
     /// <inheritdoc/>
-    public bool Contains(T item)
+    public virtual bool Contains(T item)
     {
-        return Contains(_root, item);
+        return Contains(Root, item);
     }
 
     /// <summary>
     /// Checks if the tree contains an item
     /// </summary>
-    private static bool Contains(Node? node, T item)
+    private static bool Contains(BinarySearchTreeNode? node, T item)
     {
         if (node is null) return false;
 
@@ -151,14 +152,14 @@ public class BinarySearchTree<T> : ICollection<T>, IXmlSerializable where T : IC
     }
 
     /// <inheritdoc/>
-    public void Clear()
+    public virtual void Clear()
     {
-        _root = null;
+        Root = null;
         _count = 0;
     }
 
     /// <inheritdoc/>
-    public void CopyTo(T[] array, int arrayIndex)
+    public virtual void CopyTo(T[] array, int arrayIndex)
     {
         ArgumentNullException.ThrowIfNull(array);
         if (arrayIndex < 0 || arrayIndex >= array.Length) throw new ArgumentOutOfRangeException(nameof(arrayIndex));
@@ -171,9 +172,9 @@ public class BinarySearchTree<T> : ICollection<T>, IXmlSerializable where T : IC
     }
 
     /// <inheritdoc/>
-    public IEnumerator<T> GetEnumerator()
+    public virtual IEnumerator<T> GetEnumerator()
     {
-        return InOrderTraversal(_root ?? throw new InvalidOperationException("Root is null")).GetEnumerator();
+        return InOrderTraversal(Root ?? throw new InvalidOperationException("Root is null")).GetEnumerator();
     }
 
     /// <inheritdoc/>
@@ -185,7 +186,7 @@ public class BinarySearchTree<T> : ICollection<T>, IXmlSerializable where T : IC
     /// <summary>
     /// In-order traversal of the tree
     /// </summary>
-    private static IEnumerable<T> InOrderTraversal(Node? node)
+    private static IEnumerable<T> InOrderTraversal(BinarySearchTreeNode? node)
     {
         if (node is null) yield break;
         foreach (var item in InOrderTraversal(node.Left))
@@ -198,11 +199,11 @@ public class BinarySearchTree<T> : ICollection<T>, IXmlSerializable where T : IC
     /// <summary>
     /// Get the minimum node in the tree
     /// </summary>
-    private static Node GetMinimum(Node node)
+    private static BinarySearchTreeNode GetMinimum(BinarySearchTreeNode binarySearchTreeNode)
     {
-        while (node.Left != null)
-            node = node.Left;
-        return node;
+        while (binarySearchTreeNode.Left != null)
+            binarySearchTreeNode = binarySearchTreeNode.Left;
+        return binarySearchTreeNode;
     }
 
     /// <inheritdoc/>
@@ -236,12 +237,30 @@ public class BinarySearchTree<T> : ICollection<T>, IXmlSerializable where T : IC
         var xmlNodes = new SerializedNodes<T>(nodes);
         new XmlSerializer(typeof(SerializedNodes<T>)).Serialize(writer, xmlNodes);
     }
+    
+    /// <inheritdoc/>
+    public virtual IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default)
+    {
+        return InOrderTraversalAsync(Root, cancellationToken).GetAsyncEnumerator(cancellationToken);
+    }
+
+    /// <summary>
+    /// Asynchronously traverses the tree in-order
+    /// </summary>
+    private static async IAsyncEnumerable<T> InOrderTraversalAsync(BinarySearchTreeNode? node, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        if (node is null) yield break;
+        await foreach (var item in InOrderTraversalAsync(node.Left, cancellationToken))
+            yield return item;
+        yield return node.Value;
+        await foreach (var item in InOrderTraversalAsync(node.Right, cancellationToken))
+            yield return item;
+    }
 }
 
 /// <summary>
 /// BST JSON converter
 /// </summary>
-/// <typeparam name="T">Stored type inside the tree</typeparam>
 public class BinarySearchTreeJsonConverter<T> : JsonConverter<BinarySearchTree<T>> where T : IComparable<T>
 {
     /// <inheritdoc/>
@@ -333,7 +352,7 @@ public class BinarySearchTreeJsonConverter<T> : JsonConverter<BinarySearchTree<T
 /// <summary>
 /// BST JSON converter factory
 /// </summary>
-public class BinarySearchTreeJsonConverterFactory : JsonConverterFactory
+public class BinarySearchTreeJsonConverterFactory : JsonConverterFactory 
 {
     /// <inheritdoc/>
     public override bool CanConvert(Type typeToConvert)
@@ -364,7 +383,7 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSer
         /// <summary>
         /// Binary search tree node
         /// </summary>
-        private class Node(TKey key, TValue value)
+        protected class BinarySearchTreeNode(TKey key, TValue value)
         {
             /// <summary>
             /// Node key
@@ -379,23 +398,23 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSer
             /// <summary>
             /// Node left child
             /// </summary>
-            public Node? Left { get; set; }
+            public BinarySearchTreeNode? Left { get; set; }
             
             /// <summary>
             /// Node right child
             /// </summary>
-            public Node? Right { get; set; }
+            public BinarySearchTreeNode? Right { get; set; }
         }
 
         /// <summary>
         /// Tree root
         /// </summary>
-        private Node? _root;
+        private protected BinarySearchTreeNode? Root;
         
         /// <summary>
         /// Number of elements in the tree
         /// </summary>
-        private int _count;
+        private protected int _count;
 
         /// <inheritdoc/>
         public int Count => _count;
@@ -404,7 +423,7 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSer
         public bool IsReadOnly => false;
 
         /// <inheritdoc/>
-        public TValue this[TKey key]
+        public virtual TValue this[TKey key]
         {
             get
             {
@@ -418,7 +437,7 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSer
             {
                 if (ContainsKey(key))
                 {
-                    _root = UpdateValue(_root, key, value);
+                    Root = UpdateValue(Root, key, value);
                 }
                 else
                 {
@@ -428,41 +447,41 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSer
         }
 
         /// <inheritdoc/>
-        public ICollection<TKey> Keys
+        public virtual ICollection<TKey> Keys
         {
             get
             {
                 var keys = new List<TKey>();
-                InOrderTraversal(_root, (node) => keys.Add(node.Key));
+                InOrderTraversal(Root, (node) => keys.Add(node.Key));
                 return keys;
             }
         }
 
         /// <inheritdoc/>
-        public ICollection<TValue> Values
+        public virtual ICollection<TValue> Values
         {
             get
             {
                 var values = new List<TValue>();
-                InOrderTraversal(_root, (node) => values.Add(node.Value));
+                InOrderTraversal(Root, (node) => values.Add(node.Value));
                 return values;
             }
         }
 
         /// <inheritdoc/>
-        public void Add(TKey key, TValue value)
+        public virtual void Add(TKey key, TValue value)
         {
             if(ContainsKey(key)) throw new InvalidOperationException("Key already exists");
-            _root = Add(_root, key, value);
+            Root = Add(Root, key, value);
             _count++;
         }
 
         /// <summary>
         /// Add a key-value pair to the tree
         /// </summary>
-        private static Node Add(Node? node, TKey key, TValue value)
+        private static BinarySearchTreeNode Add(BinarySearchTreeNode? node, TKey key, TValue value)
         {
-            if (node is null) return new Node(key, value);
+            if (node is null) return new BinarySearchTreeNode(key, value);
 
             var comparison = key.CompareTo(node.Key);
             switch (comparison)
@@ -480,10 +499,10 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSer
         }
 
         /// <inheritdoc/>
-        public bool Remove(TKey key)
+        public virtual bool Remove(TKey key)
         {
             if (!ContainsKey(key)) return false;
-            _root = Remove(_root, key);
+            Root = Remove(Root, key);
             _count--;
             return true;
         }
@@ -491,7 +510,7 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSer
         /// <summary>
         /// Removes a key from the tree
         /// </summary>
-        private static Node? Remove(Node? node, TKey key)
+        private static BinarySearchTreeNode? Remove(BinarySearchTreeNode? node, TKey key)
         {
             if (node is null) return null;
 
@@ -520,15 +539,15 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSer
         }
 
         /// <inheritdoc/>
-        public bool ContainsKey(TKey key)
+        public virtual bool ContainsKey(TKey key)
         {
-            return ContainsKey(_root, key);
+            return ContainsKey(Root, key);
         }
 
         /// <summary>
-        /// Checks if the tree contains a key
+        /// Recursively checks if the tree contains a key
         /// </summary>
-        private static bool ContainsKey(Node? node, TKey key)
+        private static bool ContainsKey(BinarySearchTreeNode? node, TKey key)
         {
             if (node is null) return false;
 
@@ -542,9 +561,9 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSer
         }
 
         /// <inheritdoc/>
-        public bool TryGetValue(TKey key, out TValue value)
+        public virtual bool TryGetValue(TKey key, out TValue value)
         {
-            var node = FindNode(_root, key);
+            var node = FindNode(Root, key);
             if (node is not null)
             {
                 value = node.Value;
@@ -557,7 +576,7 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSer
         /// <summary>
         /// Find a node in the tree
         /// </summary>
-        private static Node? FindNode(Node? node, TKey key)
+        private static BinarySearchTreeNode? FindNode(BinarySearchTreeNode? node, TKey key)
         {
             if (node is null) return null;
 
@@ -571,45 +590,45 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSer
         }
 
         /// <inheritdoc/>
-        public void Add(KeyValuePair<TKey, TValue> item)
+        public virtual void Add(KeyValuePair<TKey, TValue> item)
         {
             Add(item.Key, item.Value);
         }
 
         /// <inheritdoc/>
-        public bool Remove(KeyValuePair<TKey, TValue> item)
+        public virtual bool Remove(KeyValuePair<TKey, TValue> item)
         {
             return Remove(item.Key);
         }
 
         /// <inheritdoc/>
-        public void Clear()
+        public virtual void Clear()
         {
-            _root = null;
+            Root = null;
             _count = 0;
         }
 
         /// <inheritdoc/>
-        public bool Contains(KeyValuePair<TKey, TValue> item)
+        public virtual bool Contains(KeyValuePair<TKey, TValue> item)
         {
             return TryGetValue(item.Key, out var value) && EqualityComparer<TValue>.Default.Equals(value, item.Value);
         }
 
         /// <inheritdoc/>
-        public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+        public virtual void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
         ArgumentNullException.ThrowIfNull(array);
         if (arrayIndex < 0 || arrayIndex >= array.Length) throw new ArgumentOutOfRangeException(nameof(arrayIndex));
             if (array.Length - arrayIndex < Count) throw new ArgumentException("Array is too small");
 
             int index = arrayIndex;
-            InOrderTraversal(_root, (node) => array[index++] = new KeyValuePair<TKey, TValue>(node.Key, node.Value));
+            InOrderTraversal(Root, (node) => array[index++] = new KeyValuePair<TKey, TValue>(node.Key, node.Value));
         }
 
         /// <inheritdoc/>
-        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+        public virtual IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            return InOrderTraversal(_root).GetEnumerator();
+            return InOrderTraversal(Root).GetEnumerator();
         }
 
         /// <inheritdoc/>
@@ -621,7 +640,7 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSer
         /// <summary>
         /// In-order traversal of the tree
         /// </summary>
-        private static IEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversal(Node? node)
+        private static IEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversal(BinarySearchTreeNode? node)
         {
             if (node is null) yield break;
             foreach (var item in InOrderTraversal(node.Left))
@@ -634,7 +653,7 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSer
         /// <summary>
         /// In-order traversal of the tree
         /// </summary>
-        private static void InOrderTraversal(Node? node, Action<Node> action)
+        private static void InOrderTraversal(BinarySearchTreeNode? node, Action<BinarySearchTreeNode> action)
         {
             if (node is null) return;
             InOrderTraversal(node.Left, action);
@@ -645,17 +664,17 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSer
         /// <summary>
         /// Gets the minimum node in the tree
         /// </summary>
-        private static Node GetMinimum(Node node)
+        private static BinarySearchTreeNode GetMinimum(BinarySearchTreeNode binarySearchTreeNode)
         {
-            while (node.Left is not null)
-                node = node.Left;
-            return node;
+            while (binarySearchTreeNode.Left is not null)
+                binarySearchTreeNode = binarySearchTreeNode.Left;
+            return binarySearchTreeNode;
         }
 
         /// <summary>
         /// Updates the value of a key in the tree
         /// </summary>
-        private static Node? UpdateValue(Node? node, TKey key, TValue value)
+        private static BinarySearchTreeNode? UpdateValue(BinarySearchTreeNode? node, TKey key, TValue value)
         {
             if (node is null) return null;
 
@@ -708,15 +727,15 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>, IXmlSer
         }
 
         /// <inheritdoc/>
-        public IAsyncEnumerator<KeyValuePair<TKey, TValue>> GetAsyncEnumerator(CancellationToken cancellationToken = default)
+        public virtual IAsyncEnumerator<KeyValuePair<TKey, TValue>> GetAsyncEnumerator(CancellationToken cancellationToken = default)
         {
-            return InOrderTraversalAsync(_root, cancellationToken).GetAsyncEnumerator(cancellationToken);
+            return InOrderTraversalAsync(Root, cancellationToken).GetAsyncEnumerator(cancellationToken);
         }
 
         /// <summary>
         /// Asynchronously traverses the tree in-order
         /// </summary>
-        private static async IAsyncEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversalAsync(Node? node, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        private static async IAsyncEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversalAsync(BinarySearchTreeNode? node, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
         {
             if (node is null) yield break;
             await foreach (var item in InOrderTraversalAsync(node.Left, cancellationToken))
@@ -830,7 +849,7 @@ public class BinarySearchTreeJsonConverter<TKey, TValue> : JsonConverter<BinaryS
 /// <summary>
 ///  BST map JSON converter factory
 /// </summary>
-public class BinarySearchTreeMapJsonConverterFactory : JsonConverterFactory
+public class BinarySearchTreeMapJsonConverterFactory : JsonConverterFactory 
 {
     /// <inheritdoc/>
     public override bool CanConvert(Type typeToConvert)

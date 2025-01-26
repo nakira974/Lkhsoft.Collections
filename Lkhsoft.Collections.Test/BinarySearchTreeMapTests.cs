@@ -297,6 +297,32 @@ public class BinarySearchTreeMapTests
             Assert.That(tree, Has.Count.EqualTo(5));
         }
     }
+    
+    
+    private static readonly KeyValuePair<int, string>[] Expected =
+    [
+        new(1, "one"),
+        new(2, "two"),
+        new(3, "three")
+    ];
+    
+    [Test]
+    public void GetEnumerator_ShouldWork()
+    {
+        var tree = new BinarySearchTree<int, string>
+        {
+            {1, "one"},
+            {2, "two"},
+            {3, "three"}
+        };
+
+        using var enumerator = tree.GetEnumerator();
+        var list = new List<KeyValuePair<int, string>>();
+
+        while (enumerator.MoveNext()) list.Add(enumerator.Current);
+
+        Assert.That(list, Is.EqualTo(Expected));
+    }
 
     [Test]
     public async Task GetAsyncEnumerator_ShouldWork()
