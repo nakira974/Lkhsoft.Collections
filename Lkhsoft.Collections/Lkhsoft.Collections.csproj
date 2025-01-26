@@ -4,7 +4,6 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>$(AssemblyVersion)</Version>
         <Title>Lkhsoft.Collections</Title>
         <Authors>Maxime Loukhal</Authors>
         <Description>A set of useful collections such as graphs, binary search trees (AVL, Red Black), B-Tree, Trie and others</Description>
@@ -27,6 +26,11 @@
     <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
         <Version>$(AssemblyVersion)-alpha</Version>
     </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <Version>$(AssemblyVersion)</Version>
+    </PropertyGroup>
+    
     <ItemGroup>
         <None Update="logo.png">
             <Pack>True</Pack>
