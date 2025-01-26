@@ -10,60 +10,28 @@
         <Description>A set of useful collections such as graphs, binary search trees (AVL, Red Black), B-Tree, Trie and others</Description>
         <PackageProjectUrl>https://github.com/nakira974/Lkhsoft.Collections</PackageProjectUrl>
         <RepositoryUrl>https://github.com/nakira974/Lkhsoft.Collections</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <Copyright>Copyright (c) Lkhsoft.Collections/Lkhsoft 2025</Copyright>
         <PackageLicenseUrl>https://github.com/nakira974/Lkhsoft.Collections/blob/trunk/LICENCE.md</PackageLicenseUrl>
         <PackageIcon>logo.png</PackageIcon>
         <PackageTags>Graphs BST B-Tree Trie</PackageTags>
         <LangVersion>default</LangVersion>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Company>Lkhsoft</Company>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <FileVersion>1.0.0</FileVersion>
+        <RepositoryType>git</RepositoryType>
     </PropertyGroup>
-
-    <ItemGroup>
-        <Content Include=".git\COMMIT_EDITMSG"/>
-        <Content Include=".git\config"/>
-        <Content Include=".git\description"/>
-        <Content Include=".git\HEAD"/>
-        <Content Include=".git\hooks\applypatch-msg.sample"/>
-        <Content Include=".git\hooks\commit-msg.sample"/>
-        <Content Include=".git\hooks\fsmonitor-watchman.sample"/>
-        <Content Include=".git\hooks\post-update.sample"/>
-        <Content Include=".git\hooks\pre-applypatch.sample"/>
-        <Content Include=".git\hooks\pre-commit.sample"/>
-        <Content Include=".git\hooks\pre-merge-commit.sample"/>
-        <Content Include=".git\hooks\pre-push.sample"/>
-        <Content Include=".git\hooks\pre-rebase.sample"/>
-        <Content Include=".git\hooks\pre-receive.sample"/>
-        <Content Include=".git\hooks\prepare-commit-msg.sample"/>
-        <Content Include=".git\hooks\push-to-checkout.sample"/>
-        <Content Include=".git\hooks\sendemail-validate.sample"/>
-        <Content Include=".git\hooks\update.sample"/>
-        <Content Include=".git\index"/>
-        <Content Include=".git\info\exclude"/>
-        <Content Include=".git\logs\HEAD"/>
-        <Content Include=".git\logs\refs\heads\trunk"/>
-        <Content Include=".git\objects\06\c5992d702470fcb1e50638963f789aced6c55a"/>
-        <Content Include=".git\objects\17\b910f6d5a46850b94605ae958573f58f4741df"/>
-        <Content Include=".git\objects\20\c1197be502c8bcf0495bddb583ff912552ab0b"/>
-        <Content Include=".git\objects\54\4a9a032b989847b227504b1ab99acdace1b5c1"/>
-        <Content Include=".git\objects\55\db24ce9167fdc9d675a4e225d2842fd41a7d9f"/>
-        <Content Include=".git\objects\72\4b07b9908c8e5fe4399fc86a386ba95ce2d5aa"/>
-        <Content Include=".git\objects\aa\ad8c24d223e18b55dcc9cbc5ecabe5dfb9428b"/>
-        <Content Include=".git\objects\ad\d57be707d1a627fd960286263733b8f2df2dcb"/>
-        <Content Include=".git\objects\e2\dae19a6dc4f1486fe1e21570257c005ddbf68e"/>
-        <Content Include=".git\refs\heads\trunk"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include=".git\objects\info\"/>
-        <Folder Include=".git\objects\pack\"/>
-        <Folder Include=".git\refs\tags\"/>
-    </ItemGroup>
 
     <ItemGroup>
       <None Update="logo.png">
         <Pack>True</Pack>
         <PackagePath></PackagePath>
       </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
     </ItemGroup>
 
 </Project>
