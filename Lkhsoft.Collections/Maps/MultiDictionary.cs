@@ -16,7 +16,7 @@ public class MultiDictionary<TKey, TValue> : RedBlackTree<TKey, ICollection<TVal
         {
             if (!TryGetValue(key, out var values))
                 throw new KeyNotFoundException();
-            ((List<TValue>)base[key]).AddRange(value ?? throw new ArgumentNullException());
+            ((List<TValue>)values).AddRange(value ?? throw new ArgumentNullException());
         }
     }
     
