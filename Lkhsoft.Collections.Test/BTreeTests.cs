@@ -16,7 +16,7 @@ public class BTreeTests
         
         for(byte i = 1; i <= 100; i++) tree.Add(i);
 
-        Assert.That(tree.Count, Is.EqualTo(5));
+        Assert.That(tree.Count, Is.EqualTo(100));
         using (Assert.EnterMultipleScope())
         {
             Assert.That(tree.Contains(10), Is.True);

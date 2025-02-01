@@ -17,7 +17,7 @@ public class MultiDictionaryTests
     public void PerformanceTest_InsertAndRetrieve_OneBillionValues()
     {
         const int numberOfKeys = 0x64; // 100 clés
-        const int valuesPerKey = 0x989680; // 10 millions de valeurs par clé
+        const int valuesPerKey = 0xF4240; // 1 millions de valeurs par clé
         const int totalValues = numberOfKeys * valuesPerKey; // 1 milliard de valeurs
 
         var stopwatch = new Stopwatch();

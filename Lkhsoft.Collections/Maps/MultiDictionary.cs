@@ -11,7 +11,7 @@ public class MultiDictionary<TKey, TValue> : RedBlackTree<TKey, ICollection<TVal
     ///<inheritdoc/>
     public override ICollection<TValue> this[TKey key]
     {
-        get => !TryGetValue(key, out var values) ? throw new ArgumentNullException(): values;
+        get => !TryGetValue(key, out var values) ? throw new KeyNotFoundException(): values;
         set
         {
             if (!TryGetValue(key, out var values))
