@@ -12,14 +12,9 @@ public class BTreeTests
     [Test]
     public void Insert_ShouldWork()
     {
-        var tree = new BTree<int>(3)
-        {
-            10,
-            20,
-            30,
-            40,
-            50
-        };
+        var tree = new BTree<int>(3);
+        
+        for(byte i = 1; i <= 100; i++) tree.Add(i);
 
         Assert.That(tree.Count, Is.EqualTo(5));
         using (Assert.EnterMultipleScope())

@@ -908,7 +908,7 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     /// <summary>
     /// Get the minimum node in the tree
     /// </summary>
-    private RedBlackTreeNode? GetMinimum(RedBlackTreeNode? node)
+    private static RedBlackTreeNode? GetMinimum(RedBlackTreeNode? node)
     {
         while (node?.Left is not null) node = (RedBlackTreeNode?) node.Left;
         return node;
